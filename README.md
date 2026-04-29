@@ -4,15 +4,16 @@
 > direct time-of-flight ranging sensor.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Status: beta](https://img.shields.io/badge/status-beta-yellow)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
 
 ## Status
 
-**Beta.** Core register protocol (enable, application commands, configuration,
-bootloader download, result and histogram FIFO pull, clock correction) is
-implemented in `src/tmf8829.c`. Platform code supplies `tmf8829_ops_t`, scratch
-memory, and optional `fw_image_read` for flashing the bundled or custom app
-image.
+**v0.1.0** — first public release. Core register protocol (enable, application
+commands, configuration, bootloader download, result and histogram FIFO pull,
+clock correction) lives in `src/tmf8829.c`. The host supplies `tmf8829_ops_t`,
+scratch memory, and optional `fw_image_read` for a custom or bundled app image.
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes. Tags use `v0.1.0` style.
 
 ## Why another TMF8829 driver?
 
@@ -62,6 +63,7 @@ ams-OSRAM drivers but wraps it in a tighter abstraction:
 ```text
 tmf8829_universal_driver/
 ├── CMakeLists.txt          # adds tmf8829_universal STATIC; options gate tests + image
+├── CHANGELOG.md
 ├── LICENSE                 # MIT (with attribution to ams-OSRAM)
 ├── include/tmf8829/
 │   ├── tmf8829.h           # umbrella; init, enable, measurement API

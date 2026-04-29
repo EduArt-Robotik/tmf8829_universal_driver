@@ -1,10 +1,26 @@
+# CMake / Ninja
 build/
 build-*/
 out/
+cmake-build-*/
+CMakeUserPresets.json
+compile_commands.json
+
+# FetchContent / sub-builds (when tests enabled)
+_deps/
+
+# IDE / tooling
 .cache/
 .vscode/
 .idea/
-compile_commands.json
+*.code-workspace
+
+# Doxygen (if generated locally)
+html/
+latex/
+doxygen/
+
+# Artifacts
 *.o
 *.a
 *.so

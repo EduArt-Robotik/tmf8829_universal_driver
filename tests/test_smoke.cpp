@@ -76,11 +76,11 @@ TEST_CASE("public types have non-zero size", "[tmf8829][smoke]")
     STATIC_REQUIRE(sizeof(tmf8829_err_t)    > 0);
 }
 
-TEST_CASE("driver version macros are populated", "[tmf8829][smoke]")
+TEST_CASE("driver version matches release package", "[tmf8829][smoke]")
 {
-    REQUIRE(TMF8829_DRIVER_VERSION_MAJOR >= 0);
-    REQUIRE(TMF8829_DRIVER_VERSION_MINOR >= 0);
-    REQUIRE(TMF8829_DRIVER_VERSION_PATCH >= 0);
+    REQUIRE(TMF8829_DRIVER_VERSION_MAJOR == 0);
+    REQUIRE(TMF8829_DRIVER_VERSION_MINOR == 1);
+    REQUIRE(TMF8829_DRIVER_VERSION_PATCH == 0);
 }
 
 TEST_CASE("init rejects null driver", "[tmf8829][init]")

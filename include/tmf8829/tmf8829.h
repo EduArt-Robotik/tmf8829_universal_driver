@@ -6,6 +6,7 @@
 
 /**
  * @file tmf8829.h
+ * @version 0.1.0
  * @brief Public API for the portable TMF8829 driver.
  *
  * Function names use @c tmf8829_snake_case, mirroring the ams-OSRAM reference
@@ -30,7 +31,7 @@ extern "C" {
 /** Major version of this driver package (header + @c tmf8829.c). */
 #define TMF8829_DRIVER_VERSION_MAJOR    0
 /** Minor version of this driver package. */
-#define TMF8829_DRIVER_VERSION_MINOR    2
+#define TMF8829_DRIVER_VERSION_MINOR    1
 /** Patch level of this driver package. */
 #define TMF8829_DRIVER_VERSION_PATCH    0
 

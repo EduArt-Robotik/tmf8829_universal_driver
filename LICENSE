@@ -35,6 +35,7 @@ under the MIT license:
   Both released under the MIT License (and the linux driver additionally
   under GPL-2.0-or-later).
 
-The optional default firmware image shipped under image/ is the unmodified
-binary produced by ams-OSRAM AG and is redistributed under the same MIT
-license terms as the original ams-OSRAM tmf8829 reference drivers.
+The optional default firmware image shipped under `image/` is derived from
+the ams-OSRAM Arduino reference `tmf8829_image.c` (byte array, PROGMEM
+stripped) and is redistributed under the same MIT license terms as the original
+ams-OSRAM tmf8829 reference drivers.
