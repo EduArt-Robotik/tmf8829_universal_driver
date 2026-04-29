@@ -2,10 +2,13 @@
  * SPDX-License-Identifier: MIT
  *
  * Copyright (c) 2026 tmf8829_universal_driver contributors
+ */
+
+/**
+ * @file tmf8829_regs.h
+ * @brief Register map, command/status codes, interrupt masks, frame layout, and bootloader constants.
  *
- * Register addresses, command opcodes, and frame-layout constants for the
- * ams-OSRAM TMF8829. Values are taken from the public ams-OSRAM TMF8829
- * Arduino / Linux reference drivers (also MIT-licensed).
+ * Derived from the ams-OSRAM TMF8829 Arduino and Linux reference drivers (MIT-licensed).
  */
 
 #ifndef TMF8829_REGS_H
@@ -18,7 +21,10 @@ extern "C" {
 #endif
 
 /* ------------------------------------------------------------------ */
-/* Default bus addresses                                              */
+/**
+ * @name Default bus addresses
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 /** Default I2C 7-bit slave address. */
@@ -28,9 +34,13 @@ extern "C" {
 #define TMF8829_SPI_WR_CMD              0x02u
 /** SPI read command prefix byte. */
 #define TMF8829_SPI_RD_CMD              0x03u
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Generic registers (visible in both bootloader and app)             */
+/**
+ * @name Registers in bootloader and application
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_REG_APP_ID              0x00u  /**< Currently running application id */
@@ -38,9 +48,13 @@ extern "C" {
 
 #define TMF8829_APP_ID__BOOTLOADER      0x80u  /**< @ref TMF8829_REG_APP_ID value when bootloader is running */
 #define TMF8829_APP_ID__APPLICATION     0x01u  /**< @ref TMF8829_REG_APP_ID value when measurement app is running */
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Power / reset / identification registers                            */
+/**
+ * @name Power, reset, identification
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_REG_I2C_DEVADDR         0xE0u  /**< Re-programmable I2C slave address */
@@ -69,9 +83,13 @@ extern "C" {
 #define TMF8829_POWERUP_NO_OVERRIDE     0u  /**< Use fuses (default) */
 #define TMF8829_POWERUP_FORCE_BOOTMON   1u  /**< Stay in bootmonitor */
 #define TMF8829_POWERUP_RAM             2u  /**< Run RAM application after AORAM bootrecords */
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Application registers                                              */
+/**
+ * @name Application registers
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_REG_APP_VER_MAJOR       0x01u
@@ -107,9 +125,13 @@ extern "C" {
 /* Result-page ancillary registers */
 #define TMF8829_REG_FIFO_STATUS         0xFAu
 #define TMF8829_REG_SYS_TICK_0          0xFBu
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Application command opcodes (written to TMF8829_REG_CMD_STAT)      */
+/**
+ * @name Application @ref TMF8829_REG_CMD_STAT opcodes and status
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_CMD_MEASURE                       0x10u
@@ -130,9 +152,13 @@ extern "C" {
 /* Application status (response in TMF8829_REG_CMD_STAT) */
 #define TMF8829_STAT_OK                           0x00u
 #define TMF8829_STAT_ACCEPTED                     0x01u
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Interrupt mask bits                                                */
+/**
+ * @name Interrupt status / enable bits
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_INT_RESULTS                       0x01u
@@ -143,9 +169,13 @@ extern "C" {
 #define TMF8829_INT_ALL \
     (TMF8829_INT_RESULTS | TMF8829_INT_MOTION | \
      TMF8829_INT_PROXIMITY | TMF8829_INT_HISTOGRAMS)
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Result frame layout                                                */
+/**
+ * @name FIFO frame layout and identifiers
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_PRE_HEADER_SIZE                   5u
@@ -182,9 +212,13 @@ extern "C" {
 #define TMF8829_RESULT_FORMAT_SIG_STRENGTH_MASK   0x08u
 #define TMF8829_RESULT_FORMAT_NOISE_MASK          0x10u
 #define TMF8829_RESULT_FORMAT_XTALK_MASK          0x20u
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Focal-plane modes                                                  */
+/**
+ * @name Focal-plane resolution modes (@ref TMF8829_REG_CFG_FP_MODE)
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_FP_MODE_8X8A                      0u
@@ -193,9 +227,13 @@ extern "C" {
 #define TMF8829_FP_MODE_32X32                     3u
 #define TMF8829_FP_MODE_32X32S                    4u
 #define TMF8829_FP_MODE_48X32                     5u
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Device characteristics                                             */
+/**
+ * @name Device limits and clock constant
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 /** Device-side FIFO size in bytes. */
@@ -203,9 +241,13 @@ extern "C" {
 
 /** Device clock rate (kHz) used for clock-correction math. */
 #define TMF8829_TICKS_PER_1000_US                 125u
+/** @} */
 
 /* ------------------------------------------------------------------ */
-/* Bootloader (registers @ 0x00 / 0x08 shared with application)       */
+/**
+ * @name Bootloader / download
+ * @{
+ */
 /* ------------------------------------------------------------------ */
 
 #define TMF8829_REG_FIFO                    0xFFu
@@ -226,6 +268,12 @@ extern "C" {
 
 /** Default RAM start address for downloadable application image. */
 #define TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT  0x00010000u
+/** @} */
+
+/**
+ * @name Poll timeouts (milliseconds), overridable at compile time
+ * @{
+ */
 
 #ifndef TMF8829_BL_CMD_TIMEOUT_MS
 #  define TMF8829_BL_CMD_TIMEOUT_MS         3u
@@ -255,6 +303,7 @@ extern "C" {
 #ifndef TMF8829_APP_CMD_STOP_TIMEOUT_MS
 #  define TMF8829_APP_CMD_STOP_TIMEOUT_MS        25u
 #endif
+/** @} */
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -168,7 +168,7 @@ instance with `bus = TMF8829_BUS_SPI` — no recompilation, no `#ifdef` flags.
 - [x] Result / histogram FIFO pull + optional callbacks.
 - [x] Clock correction (`tmf8829_clk_correction_set`, ratio query).
 - [x] Vendor image under `image/` + `tmf8829_default_image_read`.
-- [ ] Doxygen pass on all public symbols (headers are partially documented).
+- [x] Doxygen: public API documented in headers (@c tmf8829.h, @c tmf8829_types.h, @c tmf8829_ops.h, @c tmf8829_regs.h, image headers).
 - [ ] GitHub Actions CI (excluded from current milestone).
 
 ## License & attribution

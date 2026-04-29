@@ -2,10 +2,14 @@
  * SPDX-License-Identifier: MIT
  *
  * Copyright (c) 2026 tmf8829_universal_driver contributors
+ */
+
+/**
+ * @file tmf8829_ops.h
+ * @brief Platform callback table (@ref tmf8829_ops_t) for bus, time, and GPIO.
  *
- * Platform operations table. The host provides one @ref tmf8829_ops_t
- * (typically per project, shared by all driver instances) and hands a pointer
- * to it to @ref tmf8829_init.
+ * One table is typically @c static const and shared by all @ref tmf8829_driver_t
+ * instances on the same board.
  */
 
 #ifndef TMF8829_OPS_H
@@ -18,76 +22,68 @@ extern "C" {
 #endif
 
 /**
- * @brief Read @p len bytes starting at register @p reg into @p buf.
+ * @brief Read @p len bytes from register @p reg into @p buf.
  *
- * The driver uses @c drv->bus, @c drv->i2c_addr, and @c drv->user_ctx to
- * locate the underlying bus handle. The implementation is responsible for
- * mapping that into the target framework's transfer call (HAL_I2C_Mem_Read,
- * spi_write_then_read, Wire.requestFrom, ...).
+ * Implementations map @p drv->bus, @p drv->i2c_addr, and @p drv->user_ctx to
+ * the underlying transfer (e.g. I2C memory read at sub-address @p reg).
  *
- * @return 0 on success, negative on bus error.
+ * @param[in]  reg  First register address on the device.
+ * @param[out] buf  Destination buffer.
+ * @param[in]  len  Bytes to read.
+ *
+ * @return @c 0 on success, negative on failure.
  */
 typedef int (*tmf8829_read_fn)(tmf8829_driver_t *drv,
                                uint8_t reg, uint8_t *buf, uint16_t len);
 
 /**
- * @brief Write @p len bytes starting at register @p reg from @p buf.
+ * @brief Write @p len bytes from @p buf starting at register @p reg.
  *
- * @return 0 on success, negative on bus error.
+ * @return @c 0 on success, negative on failure.
  */
 typedef int (*tmf8829_write_fn)(tmf8829_driver_t *drv,
                                 uint8_t reg, const uint8_t *buf, uint16_t len);
 
 /**
- * @brief Block for at least @p us microseconds. Resolution is host-defined;
- *        the driver only relies on the call returning after the requested
- *        amount of time.
+ * @brief Busy-wait for at least @p us microseconds (resolution is host-defined).
  */
 typedef void (*tmf8829_delay_us_fn)(uint32_t us);
 
 /**
- * @brief Return a free-running microsecond tick. Wrap-around is permitted;
- *        the driver only takes differences.
+ * @brief Free-running microsecond tick (32-bit wrap allowed; only differences are used).
  */
 typedef uint32_t (*tmf8829_systick_us_fn)(void);
 
 /**
- * @brief Drive the sensor's enable pin high (@p high non-zero) or low.
+ * @brief Drive the sensor enable pin: low if @p high is zero, else high.
  *
- * Pin direction / pull configuration is the host's responsibility and must
- * already be in place by the time @ref tmf8829_init runs.
+ * Pin mux / mode must be configured before @ref tmf8829_init.
  */
 typedef void (*tmf8829_write_pin_enable_fn)(tmf8829_driver_t *drv, int high);
 
 /**
- * @brief Read the IRQ pin level. Optional; may be set to NULL when the host
- *        doesn't wire the IRQ pin or polls register state instead.
+ * @brief Optional: read the IRQ GPIO level for this instance.
  *
- * @return 1 if asserted (high), 0 if deasserted (low), negative on error.
+ * May be @c NULL if the host polls @ref TMF8829_REG_INT_STATUS only.
+ *
+ * @return @c 1 if the interrupt line is asserted, @c 0 if deasserted, negative on error.
  */
 typedef int (*tmf8829_read_pin_int_fn)(tmf8829_driver_t *drv);
 
 /**
- * @brief Set of platform callbacks the driver depends on.
+ * @brief Set of platform callbacks required by @ref tmf8829_init.
  *
- * One @ref tmf8829_ops_t typically describes a target platform (e.g. STM32
- * HAL on a particular board) and is shared by every TMF8829 driver instance
- * on that platform. The struct is intentionally const-friendly; you can
- * declare it as @c static @c const in your port file.
- *
- * **Required fields**: @ref read, @ref write, @ref delay_us, @ref systick_us,
- *                      @ref write_pin_enable.
- *
- * **Optional fields**: @ref read_pin_int.
+ * Declare one @c const instance per port (e.g. STM32 HAL) and pass its address
+ * to every sensor on that port.
  */
 struct tmf8829_ops
 {
-    tmf8829_read_fn               read;             /**< (required) */
-    tmf8829_write_fn              write;            /**< (required) */
-    tmf8829_delay_us_fn           delay_us;         /**< (required) */
-    tmf8829_systick_us_fn         systick_us;       /**< (required) */
-    tmf8829_write_pin_enable_fn   write_pin_enable; /**< (required) */
-    tmf8829_read_pin_int_fn       read_pin_int;     /**< (optional, may be NULL) */
+    tmf8829_read_fn               read;             /**< Required: register read. */
+    tmf8829_write_fn              write;            /**< Required: register write. */
+    tmf8829_delay_us_fn           delay_us;         /**< Required: microsecond delay. */
+    tmf8829_systick_us_fn         systick_us;       /**< Required: microsecond time base. */
+    tmf8829_write_pin_enable_fn   write_pin_enable; /**< Required: enable power pin. */
+    tmf8829_read_pin_int_fn       read_pin_int;     /**< Optional: IRQ pin; may be @c NULL. */
 };
 
 #ifdef __cplusplus
