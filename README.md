@@ -72,8 +72,7 @@ tmf8829_universal_driver/
 │   ├── tmf8829_ops.h       # tmf8829_ops_t platform callback table
 │   └── tmf8829_regs.h      # register addresses, command opcodes, frame layout
 ├── src/
-│   ├── tmf8829.c           # protocol implementation
-│   └── tmf8829_internal.h  # private helpers
+│   └── tmf8829.c           # protocol implementation
 ├── image/                  # opt-in vendor firmware (not built by default)
 │   ├── tmf8829_vendor_image.c / .h   # vendored ams-OSRAM app binary
 │   ├── tmf8829_default_image.h
