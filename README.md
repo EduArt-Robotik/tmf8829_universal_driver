@@ -4,13 +4,15 @@
 > direct time-of-flight ranging sensor.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-![Status: scaffold](https://img.shields.io/badge/status-scaffold-orange)
+![Status: beta](https://img.shields.io/badge/status-beta-yellow)
 
 ## Status
 
-**Pre-alpha scaffold.** The library skeleton, public API surface, and build
-system are in place. Function bodies are stubs that return
-`TMF8829_E_NOT_IMPLEMENTED`. See [Roadmap](#roadmap).
+**Beta.** Core register protocol (enable, application commands, configuration,
+bootloader download, result and histogram FIFO pull, clock correction) is
+implemented in `src/tmf8829.c`. Platform code supplies `tmf8829_ops_t`, scratch
+memory, and optional `fw_image_read` for flashing the bundled or custom app
+image.
 
 ## Why another TMF8829 driver?
 
@@ -26,7 +28,7 @@ firmware project awkward:
   global `#define`s; the platform shim is not parameterized by an instance
   handle.
 - **Layering inversion**: the platform "shim" includes the application driver
-  header and calls into it (e.g. `tmf8829_app_process_irq` lives in the shim).
+  header and calls into it.
 - **Tight platform coupling in headers**: including the core driver header
   transitively pulls in `<linux/kernel.h>` / `<linux/gpio.h>` / `<Arduino.h>`.
 - **Application policy in the driver**: CSV printing, frame post-processing,
@@ -48,8 +50,9 @@ ams-OSRAM drivers but wraps it in a tighter abstraction:
   setup are entirely the host's concern. The driver only knows "drive enable
   pin high" / "what's the IRQ pin reading?".
 - Logging is one optional callback. CSV / `printf` macros are gone.
-- Frames are delivered by **pull**: the host calls `tmf8829_handle_irq()` and
-  then `tmf8829_read_results()` / `tmf8829_read_histogram()`.
+- Frames are delivered by **pull**: clear interrupts with
+  `tmf8829_get_and_clr_interrupts`, then `tmf8829_read_results()` /
+  `tmf8829_read_histogram()`.
 - The driver does no dynamic allocation. Scratch memory is caller-provided.
 - The default firmware image is **opt-in** — it lives under `image/` as a
   separate CMake target you only link if you want the bundled blob.
@@ -66,14 +69,15 @@ tmf8829_universal_driver/
 │   ├── tmf8829_ops.h       # tmf8829_ops_t platform callback table
 │   └── tmf8829_regs.h      # register addresses, command opcodes, frame layout
 ├── src/
-│   ├── tmf8829.c           # protocol / state machine (currently stubs)
+│   ├── tmf8829.c           # protocol implementation
 │   └── tmf8829_internal.h  # private helpers
-├── image/                  # opt-in vendor firmware blob (not built by default)
+├── image/                  # opt-in vendor firmware (not built by default)
+│   ├── tmf8829_vendor_image.c / .h   # vendored ams-OSRAM app binary
 │   ├── tmf8829_default_image.h
-│   └── tmf8829_default_image.c
+│   └── tmf8829_default_image.c       # fw_image_read adapter → vendor image
 └── tests/
-    ├── test_smoke.cpp      # link / type / error-code sanity (Catch2 v3)
-    └── support/            # in-memory fakes for upcoming behavior tests
+    ├── test_*.cpp          # Catch2 v3
+    └── support/            # fakes (FakeBus, FakeClock, FakePin)
 ```
 
 ## Requirements
@@ -94,6 +98,18 @@ add_subdirectory(external/tmf8829_universal_driver)
 target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829)
 ```
 
+### Bundled application image
+
+```cmake
+set(TMF8829_INCLUDE_DEFAULT_IMAGE ON CACHE BOOL "" FORCE)
+add_subdirectory(external/tmf8829_universal_driver)
+target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829 tmf8829::default_image)
+```
+
+Then assign `drv.fw_image_read = tmf8829_default_image_read` before
+`tmf8829_init`, and call `tmf8829_download_firmware(&drv,
+TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, use_fifo)` from bootloader context.
+
 ### Standalone (for development / running tests)
 
 ```sh
@@ -110,17 +126,13 @@ is auto-enabled.
 | Option | Default | Purpose |
 |---|---|---|
 | `TMF8829_BUILD_TESTS` | `OFF` (auto-`ON` standalone) | Build Catch2 unit tests. Pulls Catch2 v3 via `FetchContent`. **Disable on embedded targets.** |
-| `TMF8829_INCLUDE_DEFAULT_IMAGE` | `OFF` | Build the bundled vendor firmware image as a separate `tmf8829::default_image` static library. |
+| `TMF8829_INCLUDE_DEFAULT_IMAGE` | `OFF` | Build the bundled vendor firmware image as `tmf8829::default_image`. |
 
 ## Usage sketch
-
-> **Note**: the API below describes the intended shape. Function bodies are
-> currently stubs (`TMF8829_E_NOT_IMPLEMENTED`); see [Roadmap](#roadmap).
 
 ```c
 #include <tmf8829/tmf8829.h>
 
-/* Provide one ops table per port (typically once per project). */
 static const tmf8829_ops_t my_stm32_ops = {
     .read              = my_stm32_read,
     .write             = my_stm32_write,
@@ -130,7 +142,6 @@ static const tmf8829_ops_t my_stm32_ops = {
     .read_pin_int      = my_stm32_read_pin_int,
 };
 
-/* One driver instance per sensor. */
 static uint8_t scratch_a[512];
 static tmf8829_driver_t sensor_a = {
     .bus         = TMF8829_BUS_I2C,
@@ -149,15 +160,16 @@ instance with `bus = TMF8829_BUS_SPI` — no recompilation, no `#ifdef` flags.
 ## Roadmap
 
 - [x] Scaffold: layout, public types, CMake, Catch2 smoke test.
-- [ ] `tmf8829_init` parameter validation + ops contract enforcement.
-- [ ] Enable / disable / CPU-ready polling.
-- [ ] Bus dispatch (I2C / SPI runtime).
-- [ ] Bootloader rewrite + firmware download via `fw_image_read` callback.
-- [ ] Application register layer: command, config-page load/write.
-- [ ] Result / histogram pull.
-- [ ] Clock correction (driver field, no `#define`s).
-- [ ] Vendor blob in `image/` + default `fw_image_read` adapter.
-- [ ] Doxygen pass + GitHub Actions CI.
+- [x] `tmf8829_init` parameter validation + ops contract enforcement.
+- [x] Enable / disable / CPU-ready polling (`tmf8829_get_and_clr_interrupts`).
+- [x] Runtime bus field (`TMF8829_BUS_I2C` / `TMF8829_BUS_SPI`) on driver struct.
+- [x] Bootloader helpers + firmware download via `fw_image_read`.
+- [x] Application layer: command, config-page load/write, start/stop measurement.
+- [x] Result / histogram FIFO pull + optional callbacks.
+- [x] Clock correction (`tmf8829_clk_correction_set`, ratio query).
+- [x] Vendor image under `image/` + `tmf8829_default_image_read`.
+- [ ] Doxygen pass on all public symbols (headers are partially documented).
+- [ ] GitHub Actions CI (excluded from current milestone).
 
 ## License & attribution
 
@@ -169,5 +181,5 @@ ams-OSRAM TMF8829 Arduino and Linux reference drivers, both of which are
 distributed under the MIT license. The `LICENSE` file contains the
 acknowledgment.
 
-The optional default firmware image under `image/` is the unmodified binary
-produced by ams-OSRAM AG and redistributed unchanged under the same terms.
+The optional default firmware image under `image/` is derived from the
+ams-OSRAM Arduino `tmf8829_image.c` (MIT) and redistributed under the same terms.

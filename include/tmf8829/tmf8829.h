@@ -5,19 +5,13 @@
  *
  * Public API for the TMF8829 universal driver.
  *
- * This is the umbrella header consumers should include. It pulls in the
- * register / type / ops headers and declares the driver instance struct and
- * the public API.
+ * Function names follow @c tmf8829_snake_case, mirroring the ams-OSRAM
+ * reference driver (CamelCase) in a predictable way
+ * (@c tmf8829Enable → @c tmf8829_enable).
  *
- * Design notes
- * ------------
- * - One @ref tmf8829_driver_t instance per sensor.
- * - Bus selection is a runtime field, not a compile flag.
- * - All host interaction goes through @ref tmf8829_ops_t callbacks.
- * - The driver allocates nothing; the caller owns scratch memory.
- * - Result and histogram frames are pulled (not pushed): call
- *   @ref tmf8829_handle_irq, then @ref tmf8829_read_results /
- *   @ref tmf8829_read_histogram.
+ * All host I/O goes through @ref tmf8829_ops_t. Result and histogram frames
+ * use a **pull** model: clear interrupts, then @ref tmf8829_read_results or
+ * @ref tmf8829_read_histogram.
  */
 
 #ifndef TMF8829_H
@@ -31,186 +25,147 @@
 extern "C" {
 #endif
 
-/* ------------------------------------------------------------------ */
-/* Version                                                            */
-/* ------------------------------------------------------------------ */
-
 #define TMF8829_DRIVER_VERSION_MAJOR    0
-#define TMF8829_DRIVER_VERSION_MINOR    1
+#define TMF8829_DRIVER_VERSION_MINOR    2
 #define TMF8829_DRIVER_VERSION_PATCH    0
 
-/* ------------------------------------------------------------------ */
-/* Per-instance application callbacks (set on tmf8829_driver_t)       */
-/* ------------------------------------------------------------------ */
+#ifndef TMF8829_ENABLE_CAP_DISCHARGE_US
+#  define TMF8829_ENABLE_CAP_DISCHARGE_US   3000u
+#endif
+#ifndef TMF8829_ENABLE_RAMP_US
+#  define TMF8829_ENABLE_RAMP_US            3000u
+#endif
+#ifndef TMF8829_CPU_READY_TIMEOUT_MS
+#  define TMF8829_CPU_READY_TIMEOUT_MS      3u
+#endif
 
-/** Optional per-instance log sink. Pass NULL to silence. */
+/**
+ * @brief Millisecond budget passed to @ref tmf8829_is_cpu_ready from
+ *        @ref tmf8829_wakeup (vendor @c ENABLE_TIME_MS).
+ */
+#ifndef TMF8829_WAKEUP_CPU_READY_TIMEOUT_MS
+#  define TMF8829_WAKEUP_CPU_READY_TIMEOUT_MS  3u
+#endif
+
 typedef void (*tmf8829_log_fn)(tmf8829_driver_t *drv,
                                int level, const char *msg);
 
-/** Called when a result frame has been pulled from the device. */
+/** Called once with the pre-header + frame header bytes (21 bytes). */
+typedef void (*tmf8829_on_stream_header_fn)(tmf8829_driver_t *drv,
+                                            const uint8_t *data, uint16_t len);
+
 typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t *drv,
                                      const uint8_t *data, uint16_t len);
 
-/** Called when a histogram frame has been pulled from the device. */
 typedef void (*tmf8829_on_histogram_fn)(tmf8829_driver_t *drv,
                                         const uint8_t *data, uint16_t len);
 
-/** Called when the driver hits an unrecoverable runtime error. */
 typedef void (*tmf8829_on_error_fn)(tmf8829_driver_t *drv, int err);
 
-/**
- * @brief Optional firmware-image streaming callback.
- *
- * The driver invokes this during @ref tmf8829_download_firmware to fetch
- * the next chunk of the application image. Implementations may serve the
- * image from a built-in const blob, external flash, the filesystem, etc.
- *
- * @param drv               Calling driver.
- * @param offset            Byte offset into the image being requested.
- * @param buf               Destination buffer for at most @p len bytes.
- * @param len               Number of bytes the driver wants.
- * @param image_total_size  On the first call (offset == 0) the implementation
- *                          must write the total image size, in bytes, here.
- *                          On subsequent calls this argument may be NULL.
- *
- * @return Non-negative number of bytes actually copied, or a negative
- *         tmf8829_err_t value on error.
- */
 typedef int (*tmf8829_fw_image_read_fn)(tmf8829_driver_t *drv,
                                         uint32_t offset,
                                         uint8_t *buf, uint32_t len,
                                         uint32_t *image_total_size);
 
-/* ------------------------------------------------------------------ */
-/* Driver instance                                                    */
-/* ------------------------------------------------------------------ */
-
-/**
- * @brief One TMF8829 driver instance.
- *
- * The struct is **public POD**: callers populate the configuration fields
- * directly before calling @ref tmf8829_init. Fields prefixed with an
- * underscore are managed by the driver and must not be touched by the host.
- *
- * @note All fields not marked otherwise default to zero-initialised
- *       (i.e. it is safe to value-initialise the struct with @c {}).
- */
 struct tmf8829_driver
 {
-    /* ----- caller-supplied configuration ----- */
-
-    /** Bus this instance speaks (I2C or SPI). */
     tmf8829_bus_t                 bus;
-
-    /** I2C 7-bit slave address; unused when @ref bus is SPI. */
     uint8_t                       i2c_addr;
-
-    /** Opaque host context handed back to every callback. */
     void                         *user_ctx;
-
-    /** Platform callback table. Required, must remain valid for the lifetime
-     *  of the driver instance. */
     const tmf8829_ops_t          *ops;
-
-    /** Caller-provided scratch buffer used for transfers and FW download. */
     uint8_t                      *scratch;
-
-    /** Length of @ref scratch in bytes; must be >= @ref TMF8829_MIN_SCRATCH_SIZE. */
     uint16_t                      scratch_len;
-
-    /** Bit-mask of @ref tmf8829_log_level values. */
     uint8_t                       log_level;
-
-    /** Optional per-instance log sink. */
     tmf8829_log_fn                log;
-
-    /** Result frame callback. */
+    tmf8829_on_stream_header_fn  on_stream_header;
     tmf8829_on_result_fn          on_result;
-
-    /** Histogram frame callback. */
     tmf8829_on_histogram_fn       on_histogram;
-
-    /** Error callback. */
     tmf8829_on_error_fn           on_error;
-
-    /** Firmware-image stream provider for @ref tmf8829_download_firmware. */
     tmf8829_fw_image_read_fn      fw_image_read;
 
-    /* ----- driver-private state (do not touch) ----- */
+    /**
+     * Host ticks in one millisecond for clock correction (default 0 = 1000).
+     * Set before @ref tmf8829_init if your @ref tmf8829_ops_t::systick_us
+     * tick is not 1&nbsp;µs granularity.
+     */
+    uint32_t                      host_ticks_per_1000_us;
+
+    /** Cached configuration page (190 bytes). */
+    uint8_t                       config[TMF8829_CFG_PAGE_SIZE];
+
+    uint32_t                      device_serial_number;
+    uint8_t                       app_version[4];
+    uint8_t                       chip_version[2];
 
     uint16_t                      _clk_corr_ratio_uq;
     uint8_t                       _clk_corr_enable;
     uint8_t                       _clk_corr_idx;
+    uint8_t                       _cyclic_running;
     uint32_t                      _host_ticks   [TMF8829_CLK_CORRECTION_PAIRS];
     uint32_t                      _device_ticks [TMF8829_CLK_CORRECTION_PAIRS];
     uint32_t                      _initialised;
 };
 
-/* ------------------------------------------------------------------ */
-/* Public API                                                         */
-/* ------------------------------------------------------------------ */
-
-/**
- * @brief Initialise a driver instance.
- *
- * Validates the supplied @p ops table and per-instance configuration on
- * @p drv (scratch pointer / length, bus selection, I2C address). On success,
- * @p drv is bound to @p ops and ready for further calls.
- *
- * @param drv  Caller-allocated driver instance with configuration fields
- *             populated.
- * @param ops  Platform callback table. Must remain valid until the driver
- *             instance is no longer used.
- *
- * @return @ref TMF8829_OK on success, negative @ref tmf8829_err_t otherwise.
- *
- * @note The host is responsible for having configured the enable / IRQ pins
- *       (direction, pulls, alternate functions) and the bus peripheral
- *       *before* calling this function. The driver does not configure pins
- *       or buses; it only operates them via the supplied callbacks.
- */
 int tmf8829_init(tmf8829_driver_t *drv, const tmf8829_ops_t *ops);
-
-/**
- * @brief Update the active log mask for an initialised driver instance.
- *
- * @return @ref TMF8829_OK on success.
- */
 int tmf8829_set_log_level(tmf8829_driver_t *drv, uint8_t level);
 
-/**
- * @brief Drive the enable pin high and wait for the device CPU to come up.
- *
- * @return @ref TMF8829_OK on success, @ref TMF8829_E_TIMEOUT if the device
- *         did not assert CPU-ready within the expected window.
- *
- * @note Stubbed in the current scaffold; returns @ref TMF8829_E_NOT_IMPLEMENTED.
- */
 int tmf8829_enable(tmf8829_driver_t *drv);
-
-/**
- * @brief Drive the enable pin low.
- *
- * @return @ref TMF8829_OK on success.
- *
- * @note Stubbed in the current scaffold; returns @ref TMF8829_E_NOT_IMPLEMENTED.
- */
 int tmf8829_disable(tmf8829_driver_t *drv);
+int tmf8829_is_cpu_ready(tmf8829_driver_t *drv, uint8_t timeout_ms);
+
+int tmf8829_get_and_clr_interrupts(tmf8829_driver_t *drv,
+                                   uint8_t mask, uint8_t *out_pending);
+int tmf8829_clr_and_enable_interrupts(tmf8829_driver_t *drv, uint8_t mask);
+int tmf8829_disable_interrupts(tmf8829_driver_t *drv, uint8_t mask);
+
+int tmf8829_soft_reset(tmf8829_driver_t *drv);
+int tmf8829_standby(tmf8829_driver_t *drv);
+int tmf8829_power_up(tmf8829_driver_t *drv);
+int tmf8829_wakeup(tmf8829_driver_t *drv);
+/** @return 1 if CPU ready, 0 if not, or negative @ref tmf8829_err_t. */
+int tmf8829_is_device_wakeup(tmf8829_driver_t *drv);
+
+int tmf8829_read_device_info(tmf8829_driver_t *drv);
+
+int tmf8829_command(tmf8829_driver_t *drv, uint8_t cmd);
+int tmf8829_cmd_load_config_page(tmf8829_driver_t *drv);
+int tmf8829_cmd_write_page(tmf8829_driver_t *drv);
+int tmf8829_get_configuration(tmf8829_driver_t *drv);
+int tmf8829_set_configuration(tmf8829_driver_t *drv);
+
+int tmf8829_start_measurement(tmf8829_driver_t *drv);
+int tmf8829_stop_measurement(tmf8829_driver_t *drv);
+
+int tmf8829_bootloader_spi_off(tmf8829_driver_t *drv);
+int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv);
 
 /**
- * @brief Read and clear the device interrupt-status register.
+ * @brief Download application firmware via @ref tmf8829_driver_t::fw_image_read.
  *
- * @param[out] mask_out  Bitwise-OR of @c TMF8829_INT_* flags indicating which
- *                       events were pending. Pass NULL if not needed.
- *
- * @return @ref TMF8829_OK on success, negative on error.
- *
- * @note Stubbed in the current scaffold; returns @ref TMF8829_E_NOT_IMPLEMENTED.
+ * @param image_start_addr  Typically @ref TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT.
+ * @param use_fifo          Non-zero to use bootloader FIFO path (needs larger
+ *                          scratch, ≥ image chunk size).
  */
-int tmf8829_handle_irq(tmf8829_driver_t *drv, uint8_t *mask_out);
+int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
+                              int use_fifo);
+
+int tmf8829_read_results(tmf8829_driver_t *drv);
+int tmf8829_read_histogram(tmf8829_driver_t *drv);
+
+uint16_t tmf8829_get_uint16(const uint8_t *data);
+uint32_t tmf8829_get_uint32(const uint8_t *data);
+void     tmf8829_set_uint16(uint16_t value, uint8_t *data);
+
+uint8_t  tmf8829_get_pixel_size(uint8_t layout);
+uint16_t tmf8829_correct_distance(const tmf8829_driver_t *drv, uint16_t distance);
+void     tmf8829_correct_distance_data_segment(tmf8829_driver_t *drv,
+                                                 uint16_t size, uint8_t layout);
+
+int      tmf8829_clk_correction_set(tmf8829_driver_t *drv, uint8_t enable);
+uint16_t tmf8829_clk_correction_ratio_uq15(const tmf8829_driver_t *drv);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}
 #endif
 
 #endif /* TMF8829_H */

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 project(tmf8829_universal_driver
   LANGUAGES C
-  VERSION 0.1.0
+  VERSION 0.2.0
   DESCRIPTION "Portable, multi-instance C11 driver for the ams-OSRAM TMF8829"
 )
 

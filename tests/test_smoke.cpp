@@ -159,16 +159,7 @@ TEST_CASE("set_log_level requires an initialised driver", "[tmf8829][init]")
     REQUIRE(d.drv.log_level == TMF8829_LOG_INFO);
 }
 
-TEST_CASE("stubbed entry points return E_NOT_IMPLEMENTED on initialised driver",
-          "[tmf8829][stubs]")
-{
-    ScratchedDriver d;
-    REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
-
-    REQUIRE(tmf8829_enable(&d.drv)               == TMF8829_E_NOT_IMPLEMENTED);
-    REQUIRE(tmf8829_disable(&d.drv)              == TMF8829_E_NOT_IMPLEMENTED);
-
-    std::uint8_t mask = 0xAB;
-    REQUIRE(tmf8829_handle_irq(&d.drv, &mask)    == TMF8829_E_NOT_IMPLEMENTED);
-    REQUIRE(mask == 0u); /* mask must be cleared even on stubbed return */
-}
+/* Behavioural tests for tmf8829_enable / tmf8829_disable / tmf8829_is_cpu_ready
+ * / tmf8829_get_and_clr_interrupts live in their own translation units
+ * (test_enable.cpp, test_interrupts.cpp). This file stays focused on the
+ * link-and-types contract. */

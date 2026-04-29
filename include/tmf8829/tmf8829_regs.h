@@ -40,6 +40,37 @@ extern "C" {
 #define TMF8829_APP_ID__APPLICATION     0x01u  /**< @ref TMF8829_REG_APP_ID value when measurement app is running */
 
 /* ------------------------------------------------------------------ */
+/* Power / reset / identification registers                            */
+/* ------------------------------------------------------------------ */
+
+#define TMF8829_REG_I2C_DEVADDR         0xE0u  /**< Re-programmable I2C slave address */
+#define TMF8829_REG_INT_STATUS          0xE1u  /**< Interrupt status (write-1-to-clear) */
+#define TMF8829_REG_INT_ENAB            0xE2u  /**< Interrupt enable mask */
+#define TMF8829_REG_ID                  0xE3u  /**< Device id (read-only) */
+#define TMF8829_REG_REVID               0xE4u  /**< Device revision id (read-only) */
+#define TMF8829_REG_RESET               0xF7u  /**< Reset register */
+#define TMF8829_REG_ENABLE              0xF8u  /**< Power / boot / status register */
+
+/* RESET register bit masks (write 1 to trigger). */
+#define TMF8829_RESET_SOFT_MASK         0x40u  /**< bit 6: soft reset */
+#define TMF8829_RESET_HARD_MASK         0x80u  /**< bit 7: hard reset */
+
+/* ENABLE register bit masks (matches ams-OSRAM register map). */
+#define TMF8829_ENABLE_STANDBY_MASK     0x01u  /**< bit 0: standby mode */
+#define TMF8829_ENABLE_TIMED_STBY_MASK  0x02u  /**< bit 1: timed standby mode */
+#define TMF8829_ENABLE_PON_MASK         0x04u  /**< bit 2: power-on request (PON) */
+#define TMF8829_ENABLE_POFF_MASK        0x08u  /**< bit 3: power-off request */
+#define TMF8829_ENABLE_POWERUP_SHIFT    4u     /**< bits 4-5: powerup_select */
+#define TMF8829_ENABLE_POWERUP_MASK     (0x03u << TMF8829_ENABLE_POWERUP_SHIFT)
+#define TMF8829_ENABLE_BOOT_NO_PLL_MASK 0x40u  /**< bit 6: boot without PLL */
+#define TMF8829_ENABLE_CPU_READY_MASK   0x80u  /**< bit 7: 1 if CPU is up */
+
+/* ENABLE.powerup_select values (placed at @ref TMF8829_ENABLE_POWERUP_SHIFT). */
+#define TMF8829_POWERUP_NO_OVERRIDE     0u  /**< Use fuses (default) */
+#define TMF8829_POWERUP_FORCE_BOOTMON   1u  /**< Stay in bootmonitor */
+#define TMF8829_POWERUP_RAM             2u  /**< Run RAM application after AORAM bootrecords */
+
+/* ------------------------------------------------------------------ */
 /* Application registers                                              */
 /* ------------------------------------------------------------------ */
 
@@ -119,6 +150,8 @@ extern "C" {
 
 #define TMF8829_PRE_HEADER_SIZE                   5u
 #define TMF8829_FRAME_HEADER_SIZE                 16u
+/** Bytes at start of frame not counted the same way as payload length field. */
+#define TMF8829_FRAME_HEADER_OFFSET               4u
 #define TMF8829_FRAME_FOOTER_SIZE                 12u
 #define TMF8829_FRAME_EOF_SIZE                    2u
 
@@ -170,6 +203,58 @@ extern "C" {
 
 /** Device clock rate (kHz) used for clock-correction math. */
 #define TMF8829_TICKS_PER_1000_US                 125u
+
+/* ------------------------------------------------------------------ */
+/* Bootloader (registers @ 0x00 / 0x08 shared with application)       */
+/* ------------------------------------------------------------------ */
+
+#define TMF8829_REG_FIFO                    0xFFu
+
+#define TMF8829_BL_CMD_STAT_SPI_OFF         0x20u
+#define TMF8829_BL_CMD_STAT_I2C_OFF         0x22u
+#define TMF8829_BL_CMD_STAT_ADDR_RAM        0x43u
+#define TMF8829_BL_CMD_STAT_W_RAM_BOTH      0x42u
+#define TMF8829_BL_CMD_STAT_FIFO_BOTH       0x45u
+#define TMF8829_BL_CMD_STAT_START_RAM_APP   0x16u
+
+#define TMF8829_BL_STAT_READY               0x00u
+
+/** Bootloader write-RAM layout: [0]=cmd, [1]=payload_len, [2..]=data */
+#define TMF8829_BL_WR_HEADER                2u
+/** Max payload bytes per @c W_RAM_BOTH command (ams reference). */
+#define TMF8829_BL_MAX_PAYLOAD              128u
+
+/** Default RAM start address for downloadable application image. */
+#define TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT  0x00010000u
+
+#ifndef TMF8829_BL_CMD_TIMEOUT_MS
+#  define TMF8829_BL_CMD_TIMEOUT_MS         3u
+#endif
+#ifndef TMF8829_BL_SET_ADDR_TIMEOUT_MS
+#  define TMF8829_BL_SET_ADDR_TIMEOUT_MS   3u
+#endif
+#ifndef TMF8829_BL_W_RAM_TIMEOUT_MS
+#  define TMF8829_BL_W_RAM_TIMEOUT_MS      3u
+#endif
+#ifndef TMF8829_BL_W_FIFO_TIMEOUT_MS
+#  define TMF8829_BL_W_FIFO_TIMEOUT_MS     3u
+#endif
+#ifndef TMF8829_BL_START_APP_TIMEOUT_MS
+#  define TMF8829_BL_START_APP_TIMEOUT_MS  3u
+#endif
+
+#ifndef TMF8829_APP_CMD_LOAD_CONFIG_TIMEOUT_MS
+#  define TMF8829_APP_CMD_LOAD_CONFIG_TIMEOUT_MS  3u
+#endif
+#ifndef TMF8829_APP_CMD_WRITE_CONFIG_TIMEOUT_MS
+#  define TMF8829_APP_CMD_WRITE_CONFIG_TIMEOUT_MS 3u
+#endif
+#ifndef TMF8829_APP_CMD_MEASURE_TIMEOUT_MS
+#  define TMF8829_APP_CMD_MEASURE_TIMEOUT_MS      5u
+#endif
+#ifndef TMF8829_APP_CMD_STOP_TIMEOUT_MS
+#  define TMF8829_APP_CMD_STOP_TIMEOUT_MS        25u
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

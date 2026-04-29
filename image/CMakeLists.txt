@@ -9,6 +9,7 @@
 
 add_library(tmf8829_default_image STATIC
   tmf8829_default_image.c
+  tmf8829_vendor_image.c
 )
 
 add_library(tmf8829::default_image ALIAS tmf8829_default_image)

@@ -13,7 +13,7 @@
  *   tmf8829_driver_t drv = { ... };
  *   drv.fw_image_read = tmf8829_default_image_read;
  *   tmf8829_init(&drv, &ops);
- *   tmf8829_download_firmware(&drv);
+ *   tmf8829_download_firmware(&drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0);
  */
 
 #ifndef TMF8829_DEFAULT_IMAGE_H
