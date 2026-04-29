@@ -50,11 +50,6 @@ target_include_directories(tmf8829_universal PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
-# Private include for src/tmf8829_internal.h
-target_include_directories(tmf8829_universal PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
 target_compile_features(tmf8829_universal PUBLIC c_std_11)
 
 # Encourage warnings without forcing -Werror on consumers.

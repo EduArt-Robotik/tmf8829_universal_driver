@@ -5,7 +5,7 @@
  */
 
 #include "tmf8829/tmf8829.h"
-#include "tmf8829_internal.h"
+#include "tmf8829/tmf8829_internal.h"
 
 #include <stddef.h>
 #include <stdint.h>

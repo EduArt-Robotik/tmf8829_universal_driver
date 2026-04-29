@@ -67,6 +67,7 @@ tmf8829_universal_driver/
 ├── LICENSE                 # MIT (with attribution to ams-OSRAM)
 ├── include/tmf8829/
 │   ├── tmf8829.h           # umbrella; init, enable, measurement API
+│   ├── tmf8829_internal.h  # init magic + inline guards (not for app use)
 │   ├── tmf8829_types.h     # tmf8829_bus_t, tmf8829_err_t, log levels, forward decls
 │   ├── tmf8829_ops.h       # tmf8829_ops_t platform callback table
 │   └── tmf8829_regs.h      # register addresses, command opcodes, frame layout
