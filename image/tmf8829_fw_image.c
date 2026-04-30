@@ -6,9 +6,9 @@
  */
 
 #include <stdint.h>
-#include "tmf8829_vendor_image.h"
+#include "tmf8829_fw_image.h"
 
-const uint8_t tmf8829_vendor_image[TMF8829_VENDOR_IMAGE_NUM_BYTES] =
+const uint8_t tmf8829_fw_image[TMF8829_FW_IMAGE_NUM_BYTES] =
 {
 0x00, 0xC0, 0x01, 0x00, 0xC1, 0x00, 0x01, 0x00, 0xED, 0x12, 0x00, 0x00,
 0xF1, 0x12, 0x00, 0x00, 0xF5, 0x12, 0x00, 0x00, 0xF9, 0x12, 0x00, 0x00,
@@ -1182,5 +1182,5 @@ const uint8_t tmf8829_vendor_image[TMF8829_VENDOR_IMAGE_NUM_BYTES] =
 0xF9, 0x00, 0x40, 0x00,
 };
 
-_Static_assert(sizeof(tmf8829_vendor_image) == TMF8829_VENDOR_IMAGE_NUM_BYTES,
-               "tmf8829_vendor_image size mismatch");
+_Static_assert(sizeof(tmf8829_fw_image) == TMF8829_FW_IMAGE_NUM_BYTES,
+               "tmf8829_fw_image size mismatch");

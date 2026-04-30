@@ -11,7 +11,7 @@
 **v0.1.0** — first public release. Core register protocol (enable, application
 commands, configuration, bootloader download, result and histogram FIFO pull,
 clock correction) lives in `src/tmf8829.c`. The host supplies `tmf8829_ops_t`,
-scratch memory, and optional `fw_image_read` for a custom or bundled app image.
+buffer memory, and optional `fw_image_read` for a custom or bundled app image.
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes. Tags use `v0.1.0` style.
 
@@ -74,9 +74,9 @@ tmf8829_universal_driver/
 ├── src/
 │   └── tmf8829.c           # protocol implementation
 ├── image/                  # opt-in vendor firmware (not built by default)
-│   ├── tmf8829_vendor_image.c / .h   # vendored ams-OSRAM app binary
-│   ├── tmf8829_default_image.h
-│   └── tmf8829_default_image.c       # fw_image_read adapter → vendor image
+│   ├── tmf8829_fw_image.c / .h       # vendored ams-OSRAM app binary
+│   ├── tmf8829_fw_source.h
+│   └── tmf8829_fw_source.c           # fw_image_read adapter → fw_image blob
 └── tests/
     ├── test_*.cpp          # Catch2 v3
     └── support/            # fakes (FakeBus, FakeClock, FakePin)
@@ -108,7 +108,7 @@ add_subdirectory(external/tmf8829_universal_driver)
 target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829 tmf8829::default_image)
 ```
 
-Then assign `drv.fw_image_read = tmf8829_default_image_read` before
+Then assign `drv.fw_image_read = tmf8829_fw_source_read` before
 `tmf8829_init`, and call `tmf8829_download_firmware(&drv,
 TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, use_fifo)` from bootloader context.
 
@@ -144,13 +144,13 @@ static const tmf8829_ops_t my_stm32_ops = {
     .read_pin_int      = my_stm32_read_pin_int,
 };
 
-static uint8_t scratch_a[512];
+static uint8_t buffer_a[512];
 static tmf8829_driver_t sensor_a = {
     .bus         = TMF8829_BUS_I2C,
     .i2c_addr    = 0x41,
     .user_ctx    = &my_i2c_handle_for_sensor_a,
-    .scratch     = scratch_a,
-    .scratch_len = sizeof(scratch_a),
+    .buffer      = buffer_a,
+    .buffer_len  = sizeof(buffer_a),
 };
 
 int rc = tmf8829_init(&sensor_a, &my_stm32_ops);
@@ -159,19 +159,14 @@ int rc = tmf8829_init(&sensor_a, &my_stm32_ops);
 A second sensor on **SPI** in the same firmware is just a second driver
 instance with `bus = TMF8829_BUS_SPI` — no recompilation, no `#ifdef` flags.
 
-## Roadmap
+## Current scope
 
-- [x] Scaffold: layout, public types, CMake, Catch2 smoke test.
-- [x] `tmf8829_init` parameter validation + ops contract enforcement.
-- [x] Enable / disable / CPU-ready polling (`tmf8829_get_and_clr_interrupts`).
-- [x] Runtime bus field (`TMF8829_BUS_I2C` / `TMF8829_BUS_SPI`) on driver struct.
-- [x] Bootloader helpers + firmware download via `fw_image_read`.
-- [x] Application layer: command, config-page load/write, start/stop measurement.
-- [x] Result / histogram FIFO pull + optional callbacks.
-- [x] Clock correction (`tmf8829_clk_correction_set`, ratio query).
-- [x] Vendor image under `image/` + `tmf8829_default_image_read`.
-- [x] Doxygen: public API documented in headers (@c tmf8829.h, @c tmf8829_types.h, @c tmf8829_ops.h, @c tmf8829_regs.h, image headers).
-- [ ] GitHub Actions CI (excluded from current milestone).
+- Public C API in `include/tmf8829/` for init, power/enable, command/config,
+  bootloader firmware download, and result/histogram reads.
+- Optional default firmware image packaged as `tmf8829::default_image`
+  (`image/tmf8829_fw_image.*` + `image/tmf8829_fw_source.*`).
+- Catch2 unit tests under `tests/` with fakes for bus, time, and pin behavior.
+- CI workflow in `.github/workflows/ci.yml` building and testing matrix targets.
 
 ## License & attribution
 

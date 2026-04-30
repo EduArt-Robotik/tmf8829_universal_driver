@@ -4,20 +4,20 @@
  * Copyright (c) 2026 tmf8829_universal_driver contributors
  *
  * Default firmware-image adapter: exposes tmf8829_fw_image_read_fn over the
- * vendored binary in tmf8829_vendor_image.c.
+ * bundled binary in tmf8829_fw_image.c.
  */
 
-#include "tmf8829_default_image.h"
-#include "tmf8829_vendor_image.h"
+#include "tmf8829_fw_source.h"
+#include "tmf8829_fw_image.h"
 
 #include <string.h>
 
-int tmf8829_default_image_read(tmf8829_driver_t *drv,
-                               uint32_t offset,
-                               uint8_t *buf, uint32_t len,
-                               uint32_t *image_total_size)
+int tmf8829_fw_source_read(tmf8829_driver_t *drv,
+                           uint32_t offset,
+                           uint8_t *buf, uint32_t len,
+                           uint32_t *image_total_size)
 {
-    const uint32_t image_bytes = (uint32_t)sizeof(tmf8829_vendor_image);
+    const uint32_t image_bytes = (uint32_t)sizeof(tmf8829_fw_image);
 
     (void)drv;
 
@@ -41,7 +41,7 @@ int tmf8829_default_image_read(tmf8829_driver_t *drv,
     {
         uint32_t remaining = image_bytes - offset;
         uint32_t to_copy   = (len < remaining) ? len : remaining;
-        memcpy(buf, &tmf8829_vendor_image[offset], to_copy);
+        memcpy(buf, &tmf8829_fw_image[offset], to_copy);
         return (int)to_copy;
     }
 }

@@ -20,13 +20,13 @@
 #ifndef TMF8829_H
 #define TMF8829_H
 
-#include "tmf8829_ops.h"
-#include "tmf8829_regs.h"
-#include "tmf8829_types.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "tmf8829_ops.h"
+#include "tmf8829_regs.h"
+#include "tmf8829_types.h"
 
 /** Major version of this driver package (header + @c tmf8829.c). */
 #define TMF8829_DRIVER_VERSION_MAJOR    0
@@ -91,7 +91,7 @@ typedef void (*tmf8829_on_stream_header_fn)(tmf8829_driver_t *drv,
  * @brief Invoked for each result payload chunk read from the FIFO.
  *
  * @param[in] drv   Driver instance.
- * @param[in] data  Chunk stored in @ref tmf8829_driver_t::scratch.
+ * @param[in] data  Chunk stored in @ref tmf8829_driver_t::buffer.
  * @param[in] len   Chunk length in bytes.
  */
 typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t *drv,
@@ -101,7 +101,7 @@ typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t *drv,
  * @brief Invoked for each histogram payload chunk read from the FIFO.
  *
  * @param[in] drv   Driver instance.
- * @param[in] data  Chunk stored in @ref tmf8829_driver_t::scratch.
+ * @param[in] data  Chunk stored in @ref tmf8829_driver_t::buffer.
  * @param[in] len   Chunk length in bytes.
  */
 typedef void (*tmf8829_on_histogram_fn)(tmf8829_driver_t *drv,
@@ -143,7 +143,7 @@ typedef int (*tmf8829_fw_image_read_fn)(tmf8829_driver_t *drv,
 /**
  * @brief One driver instance per physical TMF8829.
  *
- * Host supplies @ref scratch, @ref ops, and optional callbacks. Fields whose
+ * Host supplies @ref buffer, @ref ops, and optional callbacks. Fields whose
  * names start with @c _ are reserved for internal use but are visible so the
  * struct can be zero-initialised as static storage.
  */
@@ -158,9 +158,9 @@ struct tmf8829_driver
     /** Platform callbacks; set by @ref tmf8829_init from its argument. */
     const tmf8829_ops_t          *ops;
     /** Caller-owned buffer for register IO and download staging. */
-    uint8_t                      *scratch;
-    /** Size of @ref scratch in bytes; must be at least @ref TMF8829_MIN_SCRATCH_SIZE. */
-    uint16_t                      scratch_len;
+    uint8_t                      *buffer;
+    /** Size of @ref buffer in bytes; must be at least @ref TMF8829_MIN_BUFFER_SIZE. */
+    uint16_t                      buffer_len;
     /** Bit mask: @ref tmf8829_log_level; used if @ref log is non-@c NULL. */
     uint8_t                       log_level;
     /** Optional log sink; may be @c NULL. */
@@ -209,7 +209,7 @@ struct tmf8829_driver
 /**
  * @brief Validate parameters, bind @p ops, and reset driver state.
  *
- * @param[in,out] drv  Driver instance; @ref tmf8829_driver_t::scratch and lengths must be valid.
+ * @param[in,out] drv  Driver instance; @ref tmf8829_driver_t::buffer and lengths must be valid.
  * @param[in]     ops  Platform operations (must remain valid for the lifetime of @p drv).
  *
  * @return @ref TMF8829_OK on success, or negative @ref tmf8829_err_t.
@@ -334,7 +334,7 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv);
 /**
  * @brief Stream firmware through @ref tmf8829_driver_t::fw_image_read and start the RAM application.
  *
- * Prerequisites: bootloader running, @ref tmf8829_driver_t::fw_image_read set, scratch large enough
+ * Prerequisites: bootloader running, @ref tmf8829_driver_t::fw_image_read set, buffer large enough
  * (non-FIFO: @ref TMF8829_BL_WR_HEADER + @ref TMF8829_BL_MAX_PAYLOAD; FIFO: full image chunks).
  *
  * @param[in] image_start_addr  Load address; use @ref TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT for vendor image.
@@ -385,9 +385,9 @@ uint8_t  tmf8829_get_pixel_size(uint8_t layout);
 uint16_t tmf8829_correct_distance(const tmf8829_driver_t *drv, uint16_t distance);
 
 /**
- * @brief Apply @ref tmf8829_correct_distance to each distance field in @ref tmf8829_driver_t::scratch.
+ * @brief Apply @ref tmf8829_correct_distance to each distance field in @ref tmf8829_driver_t::buffer.
  *
- * @param[in] size    Number of bytes in scratch to treat as pixels of size @ref tmf8829_get_pixel_size(@p layout).
+ * @param[in] size    Number of bytes in buffer to treat as pixels of size @ref tmf8829_get_pixel_size(@p layout).
  * @param[in] layout  Result-format byte (peak count and flags).
  */
 void     tmf8829_correct_distance_data_segment(tmf8829_driver_t *drv,

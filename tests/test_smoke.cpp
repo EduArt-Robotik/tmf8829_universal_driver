@@ -6,8 +6,8 @@
  * Smoke test: confirms the public headers parse, the static library links,
  * basic types are visible, and tmf8829_init enforces the parameter contract.
  *
- * Behavioural tests for enable / IRQ / measurement come in subsequent
- * batches; they will live in their own translation units alongside this one.
+ * Behavioural tests for enable / IRQ / measurement are in dedicated
+ * translation units (e.g. test_enable.cpp and test_interrupts.cpp).
  */
 
 #include <catch2/catch_all.hpp>
@@ -22,8 +22,8 @@ extern "C" {
 
 namespace {
 
-/* Trivial fakes used only to build a "well-formed" ops table. They record
- * nothing; behavioural tests will introduce a richer fake later. */
+/* Trivial fakes used only to build a "well-formed" ops table. Behavioural
+ * tests use richer fakes in tests/support/. */
 
 int   fake_read (tmf8829_driver_t*, uint8_t, uint8_t*, uint16_t)        { return 0; }
 int   fake_write(tmf8829_driver_t*, uint8_t, const uint8_t*, uint16_t)  { return 0; }
@@ -41,16 +41,16 @@ const tmf8829_ops_t kCompleteOps = {
 };
 
 /* Minimal driver instance for tests that need a "valid" config. */
-struct ScratchedDriver {
-    std::array<std::uint8_t, TMF8829_MIN_SCRATCH_SIZE> buf{};
+struct BufferedDriver {
+    std::array<std::uint8_t, TMF8829_MIN_BUFFER_SIZE> buf{};
     tmf8829_driver_t drv{};
 
-    ScratchedDriver()
+    BufferedDriver()
     {
         drv.bus         = TMF8829_BUS_I2C;
         drv.i2c_addr    = TMF8829_DEFAULT_I2C_ADDR;
-        drv.scratch     = buf.data();
-        drv.scratch_len = static_cast<std::uint16_t>(buf.size());
+        drv.buffer      = buf.data();
+        drv.buffer_len  = static_cast<std::uint16_t>(buf.size());
     }
 };
 
@@ -90,13 +90,13 @@ TEST_CASE("init rejects null driver", "[tmf8829][init]")
 
 TEST_CASE("init rejects null ops", "[tmf8829][init]")
 {
-    ScratchedDriver d;
+    BufferedDriver d;
     REQUIRE(tmf8829_init(&d.drv, nullptr) == TMF8829_E_PARAM);
 }
 
 TEST_CASE("init rejects ops missing required callbacks", "[tmf8829][init]")
 {
-    ScratchedDriver d;
+    BufferedDriver d;
     tmf8829_ops_t partial = {};
     REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
 
@@ -105,43 +105,43 @@ TEST_CASE("init rejects ops missing required callbacks", "[tmf8829][init]")
     REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects missing scratch", "[tmf8829][init]")
+TEST_CASE("init rejects missing buffer", "[tmf8829][init]")
 {
     tmf8829_driver_t drv{};
     drv.bus      = TMF8829_BUS_I2C;
     drv.i2c_addr = TMF8829_DEFAULT_I2C_ADDR;
-    /* No scratch buffer */
+    /* No working buffer */
     REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects undersized scratch", "[tmf8829][init]")
+TEST_CASE("init rejects undersized buffer", "[tmf8829][init]")
 {
     std::array<std::uint8_t, 32> tiny{};
     tmf8829_driver_t drv{};
     drv.bus         = TMF8829_BUS_I2C;
     drv.i2c_addr    = TMF8829_DEFAULT_I2C_ADDR;
-    drv.scratch     = tiny.data();
-    drv.scratch_len = static_cast<std::uint16_t>(tiny.size());
+    drv.buffer      = tiny.data();
+    drv.buffer_len  = static_cast<std::uint16_t>(tiny.size());
     REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
 TEST_CASE("init rejects invalid I2C address", "[tmf8829][init]")
 {
-    ScratchedDriver d;
+    BufferedDriver d;
     d.drv.i2c_addr = 0xFF; /* > 0x7F: not a valid 7-bit address */
     REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
 TEST_CASE("init succeeds with a valid I2C configuration", "[tmf8829][init]")
 {
-    ScratchedDriver d;
+    BufferedDriver d;
     REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
     REQUIRE(d.drv.ops == &kCompleteOps);
 }
 
 TEST_CASE("init succeeds with a valid SPI configuration", "[tmf8829][init]")
 {
-    ScratchedDriver d;
+    BufferedDriver d;
     d.drv.bus      = TMF8829_BUS_SPI;
     d.drv.i2c_addr = 0; /* unused for SPI */
     REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
@@ -153,7 +153,7 @@ TEST_CASE("set_log_level requires an initialised driver", "[tmf8829][init]")
     tmf8829_driver_t drv{};
     REQUIRE(tmf8829_set_log_level(&drv, TMF8829_LOG_INFO) == TMF8829_E_PARAM);
 
-    ScratchedDriver d;
+    BufferedDriver d;
     REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
     REQUIRE(tmf8829_set_log_level(&d.drv, TMF8829_LOG_INFO) == TMF8829_OK);
     REQUIRE(d.drv.log_level == TMF8829_LOG_INFO);

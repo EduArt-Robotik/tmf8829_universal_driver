@@ -3,13 +3,13 @@
 # Only entered from the parent CMakeLists when TMF8829_INCLUDE_DEFAULT_IMAGE=ON.
 #
 # Hosts that want the bundled vendor firmware image link against
-# tmf8829::default_image and bind tmf8829_default_image_read to
+# tmf8829::default_image and bind tmf8829_fw_source_read to
 # drv->fw_image_read. Hosts that supply their own image (e.g. from external
 # flash, FATFS, or a different firmware revision) ignore this target.
 
 add_library(tmf8829_default_image STATIC
-  tmf8829_default_image.c
-  tmf8829_vendor_image.c
+  tmf8829_fw_source.c
+  tmf8829_fw_image.c
 )
 
 add_library(tmf8829::default_image ALIAS tmf8829_default_image)

@@ -53,16 +53,16 @@ static int bus_write(tmf8829_driver_t *drv, uint8_t reg, const uint8_t *buf, uin
 static int reg_poll_first(tmf8829_driver_t *drv, uint8_t reg,
                           uint8_t expected, uint8_t len, uint16_t timeout_ms)
 {
-    if (len == 0u || len > drv->scratch_len) {
+    if (len == 0u || len > drv->buffer_len) {
         return TMF8829_E_PARAM;
     }
     unsigned int remaining = (unsigned int)timeout_ms + 1u;
     do {
-        int rc = bus_read(drv, reg, drv->scratch, len);
+        int rc = bus_read(drv, reg, drv->buffer, len);
         if (rc != TMF8829_OK) {
             return rc;
         }
-        if (drv->scratch[0] == expected) {
+        if (drv->buffer[0] == expected) {
             return TMF8829_OK;
         }
         if (remaining > 1u) {
@@ -162,7 +162,7 @@ static int validate_instance(const tmf8829_driver_t *drv)
     if (drv == NULL) {
         return TMF8829_E_PARAM;
     }
-    if (drv->scratch == NULL || drv->scratch_len < TMF8829_MIN_SCRATCH_SIZE) {
+    if (drv->buffer == NULL || drv->buffer_len < TMF8829_MIN_BUFFER_SIZE) {
         return TMF8829_E_PARAM;
     }
     if (drv->bus != TMF8829_BUS_I2C && drv->bus != TMF8829_BUS_SPI) {
@@ -386,11 +386,11 @@ int tmf8829_read_device_info(tmf8829_driver_t *drv)
     if (drv->app_version[0] != TMF8829_APP_ID__APPLICATION) {
         return TMF8829_E_STATE;
     }
-    if (bus_read(drv, TMF8829_REG_SERIAL_NUMBER_0, drv->scratch, 4) !=
+    if (bus_read(drv, TMF8829_REG_SERIAL_NUMBER_0, drv->buffer, 4) !=
         TMF8829_OK) {
         return TMF8829_E_BUS;
     }
-    drv->device_serial_number = tmf8829_get_uint32(drv->scratch);
+    drv->device_serial_number = tmf8829_get_uint32(drv->buffer);
     return TMF8829_OK;
 }
 
@@ -400,8 +400,8 @@ int tmf8829_command(tmf8829_driver_t *drv, uint8_t cmd)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = cmd;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = cmd;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     rc = reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_STAT_OK, 1u,
@@ -415,8 +415,8 @@ int tmf8829_cmd_load_config_page(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = TMF8829_CMD_LOAD_CONFIG_PAGE;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_CMD_LOAD_CONFIG_PAGE;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     rc = reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_STAT_OK, 1u,
@@ -433,8 +433,8 @@ int tmf8829_cmd_write_page(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = TMF8829_CMD_WRITE_PAGE;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_CMD_WRITE_PAGE;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_STAT_OK, 1u,
@@ -447,7 +447,7 @@ int tmf8829_get_configuration(tmf8829_driver_t *drv)
     if (rc != TMF8829_OK) {
         return rc;
     }
-    if (sizeof(drv->config) > drv->scratch_len) {
+    if (sizeof(drv->config) > drv->buffer_len) {
         return TMF8829_E_PARAM;
     }
     return bus_read(drv, TMF8829_REG_CFG_PERIOD_MS_LSB, drv->config,
@@ -479,8 +479,8 @@ int tmf8829_start_measurement(tmf8829_driver_t *drv)
 
     clk_reset(drv);
 
-    drv->scratch[0] = TMF8829_CMD_MEASURE;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_CMD_MEASURE;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     rc = reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_STAT_ACCEPTED, 1u,
@@ -511,8 +511,8 @@ int tmf8829_stop_measurement(tmf8829_driver_t *drv)
         return rc;
     }
 
-    drv->scratch[0] = TMF8829_CMD_STOP;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_CMD_STOP;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     drv->_cyclic_running = 0u;
@@ -562,8 +562,8 @@ int tmf8829_bootloader_spi_off(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_SPI_OFF;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_SPI_OFF;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u,
@@ -575,8 +575,8 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_I2C_OFF;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_I2C_OFF;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u,
@@ -585,13 +585,13 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv)
 
 static int bl_set_ram_addr(tmf8829_driver_t *drv, uint32_t addr)
 {
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_ADDR_RAM;
-    drv->scratch[1] = 4u;
-    drv->scratch[2] = (uint8_t)(addr & 0xFFu);
-    drv->scratch[3] = (uint8_t)((addr >> 8) & 0xFFu);
-    drv->scratch[4] = (uint8_t)((addr >> 16) & 0xFFu);
-    drv->scratch[5] = (uint8_t)((addr >> 24) & 0xFFu);
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 6u) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_ADDR_RAM;
+    drv->buffer[1] = 4u;
+    drv->buffer[2] = (uint8_t)(addr & 0xFFu);
+    drv->buffer[3] = (uint8_t)((addr >> 8) & 0xFFu);
+    drv->buffer[4] = (uint8_t)((addr >> 16) & 0xFFu);
+    drv->buffer[5] = (uint8_t)((addr >> 24) & 0xFFu);
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 6u) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 3u,
@@ -602,13 +602,13 @@ static int bl_write_ram_both(tmf8829_driver_t *drv, uint8_t payload_len,
                              const uint8_t *payload)
 {
     uint16_t total = (uint16_t)(TMF8829_BL_WR_HEADER + payload_len);
-    if (total > drv->scratch_len) {
+    if (total > drv->buffer_len) {
         return TMF8829_E_PARAM;
     }
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_W_RAM_BOTH;
-    drv->scratch[1] = payload_len;
-    memcpy(&drv->scratch[TMF8829_BL_WR_HEADER], payload, payload_len);
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, total) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_W_RAM_BOTH;
+    drv->buffer[1] = payload_len;
+    memcpy(&drv->buffer[TMF8829_BL_WR_HEADER], payload, payload_len);
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, total) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u,
@@ -618,15 +618,15 @@ static int bl_write_ram_both(tmf8829_driver_t *drv, uint8_t payload_len,
 static int bl_write_fifo_both(tmf8829_driver_t *drv, uint32_t addr, uint32_t len)
 {
     uint16_t wsize = (uint16_t)((len + 3u) / 4u);
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_FIFO_BOTH;
-    drv->scratch[1] = 6u;
-    drv->scratch[2] = (uint8_t)(addr & 0xFFu);
-    drv->scratch[3] = (uint8_t)((addr >> 8) & 0xFFu);
-    drv->scratch[4] = (uint8_t)((addr >> 16) & 0xFFu);
-    drv->scratch[5] = (uint8_t)((addr >> 24) & 0xFFu);
-    drv->scratch[6] = (uint8_t)(wsize & 0xFFu);
-    drv->scratch[7] = (uint8_t)((wsize >> 8) & 0xFFu);
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 8u) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_FIFO_BOTH;
+    drv->buffer[1] = 6u;
+    drv->buffer[2] = (uint8_t)(addr & 0xFFu);
+    drv->buffer[3] = (uint8_t)((addr >> 8) & 0xFFu);
+    drv->buffer[4] = (uint8_t)((addr >> 16) & 0xFFu);
+    drv->buffer[5] = (uint8_t)((addr >> 24) & 0xFFu);
+    drv->buffer[6] = (uint8_t)(wsize & 0xFFu);
+    drv->buffer[7] = (uint8_t)((wsize >> 8) & 0xFFu);
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 8u) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u,
@@ -635,8 +635,8 @@ static int bl_write_fifo_both(tmf8829_driver_t *drv, uint32_t addr, uint32_t len
 
 static int bl_start_ram_app(tmf8829_driver_t *drv)
 {
-    drv->scratch[0] = TMF8829_BL_CMD_STAT_START_RAM_APP;
-    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->scratch, 1) != TMF8829_OK) {
+    drv->buffer[0] = TMF8829_BL_CMD_STAT_START_RAM_APP;
+    if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 1) != TMF8829_OK) {
         return TMF8829_E_BUS;
     }
     return reg_poll_first(drv, TMF8829_REG_APP_ID, TMF8829_APP_ID__APPLICATION,
@@ -684,17 +684,17 @@ int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
         }
         idx = 0u;
         while (idx < image_size) {
-            uint32_t room = (uint32_t)drv->scratch_len;
+            uint32_t room = (uint32_t)drv->buffer_len;
             uint32_t need = image_size - idx;
             chunk_len = (uint16_t)((need < room) ? need : room);
-            n = drv->fw_image_read(drv, idx, drv->scratch, chunk_len, NULL);
+            n = drv->fw_image_read(drv, idx, drv->buffer, chunk_len, NULL);
             if (n < 0) {
                 return n;
             }
             if ((uint32_t)n != (uint32_t)chunk_len) {
                 return TMF8829_E_BOOTLOADER;
             }
-            if (bus_write(drv, TMF8829_REG_FIFO, drv->scratch, chunk_len) !=
+            if (bus_write(drv, TMF8829_REG_FIFO, drv->buffer, chunk_len) !=
                 TMF8829_OK) {
                 return TMF8829_E_BUS;
             }
@@ -719,12 +719,12 @@ int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
             uint32_t remain = image_size - idx;
             uint32_t maxpl  = TMF8829_BL_MAX_PAYLOAD;
             chunk_len = (uint16_t)((remain < maxpl) ? remain : maxpl);
-            if (TMF8829_BL_WR_HEADER + chunk_len > drv->scratch_len) {
+            if (TMF8829_BL_WR_HEADER + chunk_len > drv->buffer_len) {
                 return TMF8829_E_PARAM;
             }
             {
                 int n = drv->fw_image_read(drv, idx,
-                                           &drv->scratch[TMF8829_BL_WR_HEADER],
+                                           &drv->buffer[TMF8829_BL_WR_HEADER],
                                            chunk_len, NULL);
                 if (n < 0) {
                     return n;
@@ -734,7 +734,7 @@ int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
                 }
             }
             rc = bl_write_ram_both(drv, (uint8_t)chunk_len,
-                                   &drv->scratch[TMF8829_BL_WR_HEADER]);
+                                   &drv->buffer[TMF8829_BL_WR_HEADER]);
             if (rc != TMF8829_OK) {
                 return rc;
             }
@@ -771,45 +771,45 @@ int tmf8829_read_results(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    if (hdr_read > drv->scratch_len) {
+    if (hdr_read > drv->buffer_len) {
         return TMF8829_E_PARAM;
     }
 
-    if (bus_read(drv, TMF8829_REG_FIFO_STATUS, drv->scratch, hdr_read) !=
+    if (bus_read(drv, TMF8829_REG_FIFO_STATUS, drv->buffer, hdr_read) !=
         TMF8829_OK) {
         return TMF8829_E_BUS;
     }
 
     if (drv->on_stream_header != NULL) {
-        drv->on_stream_header(drv, drv->scratch, hdr_read);
+        drv->on_stream_header(drv, drv->buffer, hdr_read);
     }
 
     h_tick = drv->ops->systick_us();
-    t_tick = tmf8829_get_uint32(drv->scratch + 1u);
-    layout = drv->scratch[TMF8829_PRE_HEADER_SIZE + 1u];
+    t_tick = tmf8829_get_uint32(drv->buffer + 1u);
+    layout = drv->buffer[TMF8829_PRE_HEADER_SIZE + 1u];
     pixel_size = tmf8829_get_pixel_size(layout);
 
     if (drv->_clk_corr_enable) {
         clk_add_pair(drv, h_tick, t_tick);
     }
 
-    if ((drv->scratch[TMF8829_PRE_HEADER_SIZE] & TMF8829_FID_MASK) !=
+    if ((drv->buffer[TMF8829_PRE_HEADER_SIZE] & TMF8829_FID_MASK) !=
         TMF8829_FID_RESULTS) {
         return TMF8829_E_NO_RESULT;
     }
 
-    payload = tmf8829_get_uint16(drv->scratch + 7u);
+    payload = tmf8829_get_uint16(drv->buffer + 7u);
     size_to_read = (uint16_t)(payload -
                               (TMF8829_FRAME_HEADER_SIZE -
                                TMF8829_FRAME_HEADER_OFFSET));
 
     rx_ok = TMF8829_OK;
     do {
-        if (pixel_size > 0u && size_to_read > drv->scratch_len) {
-            rx_size = (uint16_t)(((uint16_t)(drv->scratch_len / pixel_size)) *
+        if (pixel_size > 0u && size_to_read > drv->buffer_len) {
+            rx_size = (uint16_t)(((uint16_t)(drv->buffer_len / pixel_size)) *
                                  pixel_size);
-        } else if (size_to_read > drv->scratch_len) {
-            rx_size = drv->scratch_len;
+        } else if (size_to_read > drv->buffer_len) {
+            rx_size = drv->buffer_len;
         } else {
             rx_size = size_to_read;
         }
@@ -820,7 +820,7 @@ int tmf8829_read_results(tmf8829_driver_t *drv)
             break;
         }
         size_to_read = (uint16_t)(size_to_read - rx_size);
-        if (bus_read(drv, TMF8829_REG_FIFO, drv->scratch, rx_size) !=
+        if (bus_read(drv, TMF8829_REG_FIFO, drv->buffer, rx_size) !=
             TMF8829_OK) {
             return TMF8829_E_BUS;
         }
@@ -841,7 +841,7 @@ int tmf8829_read_results(tmf8829_driver_t *drv)
         }
 
         if (drv->on_result != NULL) {
-            drv->on_result(drv, drv->scratch, rx_size);
+            drv->on_result(drv, drv->buffer, rx_size);
         }
 
     } while (size_to_read > 0u && rx_ok == TMF8829_OK);
@@ -849,7 +849,7 @@ int tmf8829_read_results(tmf8829_driver_t *drv)
     if (rx_size < TMF8829_FRAME_EOF_SIZE) {
         return TMF8829_E_NO_RESULT;
     }
-    eof_marker = tmf8829_get_uint16(drv->scratch + rx_size -
+    eof_marker = tmf8829_get_uint16(drv->buffer + rx_size -
                                     TMF8829_FRAME_EOF_SIZE);
     if (eof_marker == TMF8829_FRAME_EOF) {
         return TMF8829_OK;
@@ -871,33 +871,33 @@ int tmf8829_read_histogram(tmf8829_driver_t *drv)
     if (!tmf8829_internal_is_initialised(drv)) {
         return TMF8829_E_PARAM;
     }
-    if (hdr_read > drv->scratch_len) {
+    if (hdr_read > drv->buffer_len) {
         return TMF8829_E_PARAM;
     }
 
-    if (bus_read(drv, TMF8829_REG_FIFO_STATUS, drv->scratch, hdr_read) !=
+    if (bus_read(drv, TMF8829_REG_FIFO_STATUS, drv->buffer, hdr_read) !=
         TMF8829_OK) {
         return TMF8829_E_BUS;
     }
 
     if (drv->on_stream_header != NULL) {
-        drv->on_stream_header(drv, drv->scratch, hdr_read);
+        drv->on_stream_header(drv, drv->buffer, hdr_read);
     }
 
-    if ((drv->scratch[TMF8829_PRE_HEADER_SIZE] & TMF8829_FID_MASK) !=
+    if ((drv->buffer[TMF8829_PRE_HEADER_SIZE] & TMF8829_FID_MASK) !=
         TMF8829_FID_HISTOGRAMS) {
         return TMF8829_E_NO_RESULT;
     }
 
-    payload = tmf8829_get_uint16(drv->scratch + 7u);
+    payload = tmf8829_get_uint16(drv->buffer + 7u);
     size_to_read = (uint16_t)(payload -
                               (TMF8829_FRAME_HEADER_SIZE -
                                TMF8829_FRAME_HEADER_OFFSET));
 
     rx_ok = TMF8829_OK;
     do {
-        if (size_to_read > drv->scratch_len) {
-            rx_size = drv->scratch_len;
+        if (size_to_read > drv->buffer_len) {
+            rx_size = drv->buffer_len;
         } else {
             rx_size = size_to_read;
         }
@@ -905,14 +905,14 @@ int tmf8829_read_histogram(tmf8829_driver_t *drv)
             break;
         }
         size_to_read = (uint16_t)(size_to_read - rx_size);
-        if (bus_read(drv, TMF8829_REG_FIFO, drv->scratch, rx_size) !=
+        if (bus_read(drv, TMF8829_REG_FIFO, drv->buffer, rx_size) !=
             TMF8829_OK) {
             return TMF8829_E_BUS;
         }
         rx_ok = TMF8829_OK;
 
         if (drv->on_histogram != NULL) {
-            drv->on_histogram(drv, drv->scratch, rx_size);
+            drv->on_histogram(drv, drv->buffer, rx_size);
         }
 
     } while (size_to_read > 0u && rx_ok == TMF8829_OK);
@@ -920,7 +920,7 @@ int tmf8829_read_histogram(tmf8829_driver_t *drv)
     if (rx_size < TMF8829_FRAME_EOF_SIZE) {
         return TMF8829_E_NO_RESULT;
     }
-    eof_marker = tmf8829_get_uint16(drv->scratch + rx_size -
+    eof_marker = tmf8829_get_uint16(drv->buffer + rx_size -
                                     TMF8829_FRAME_EOF_SIZE);
     if (eof_marker == TMF8829_FRAME_EOF) {
         return TMF8829_OK;
@@ -1005,9 +1005,9 @@ void tmf8829_correct_distance_data_segment(tmf8829_driver_t *drv,
         }
 
         for (idx_peak = 0u; idx_peak < num_peaks; idx_peak++) {
-            uint16_t raw = tmf8829_get_uint16(&drv->scratch[idxpixel + idx]);
+            uint16_t raw = tmf8829_get_uint16(&drv->buffer[idxpixel + idx]);
             uint16_t cor = tmf8829_correct_distance(drv, raw);
-            tmf8829_set_uint16(cor, &drv->scratch[idxpixel + idx]);
+            tmf8829_set_uint16(cor, &drv->buffer[idxpixel + idx]);
             idx = (uint8_t)(idx + 3u);
             if ((layout & TMF8829_RESULT_FORMAT_SIG_STRENGTH_MASK) != 0u) {
                 idx = (uint8_t)(idx + 2u);

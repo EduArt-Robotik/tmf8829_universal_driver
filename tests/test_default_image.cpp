@@ -10,8 +10,8 @@
 
 extern "C" {
 #include "tmf8829/tmf8829_types.h"
-#include "tmf8829_default_image.h"
-#include "tmf8829_vendor_image.h"
+#include "tmf8829_fw_source.h"
+#include "tmf8829_fw_image.h"
 }
 
 TEST_CASE("default_image_read: size-only probe", "[tmf8829][image]")

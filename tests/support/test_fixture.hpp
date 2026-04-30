@@ -3,8 +3,8 @@
 // Copyright (c) 2026 tmf8829_universal_driver contributors
 //
 // Test Fixture: wires FakeBus, FakeClock, and FakePin into a
-// tmf8829_driver_t with a complete tmf8829_ops_t and a min-sized scratch
-// buffer. Tests construct one Fixture per TEST_CASE (typical Catch2 idiom).
+// tmf8829_driver_t with a complete tmf8829_ops_t and a min-sized buffer.
+// Tests construct one Fixture per TEST_CASE (typical Catch2 idiom).
 
 #pragma once
 
@@ -28,7 +28,7 @@ public:
     FakeClock                                              clock;
     FakePin                                                pin;
 
-    std::array<std::uint8_t, TMF8829_MIN_SCRATCH_SIZE>     scratch{};
+    std::array<std::uint8_t, TMF8829_MIN_BUFFER_SIZE>      buffer{};
     tmf8829_driver_t                                       drv{};
     tmf8829_ops_t                                          ops{};
 
@@ -48,8 +48,8 @@ public:
         drv.bus               = bus_kind;
         drv.i2c_addr          = i2c_addr;
         drv.user_ctx          = this;
-        drv.scratch           = scratch.data();
-        drv.scratch_len       = static_cast<std::uint16_t>(scratch.size());
+        drv.buffer            = buffer.data();
+        drv.buffer_len        = static_cast<std::uint16_t>(buffer.size());
 
         FakeClock::active     = &clock;
     }

@@ -108,14 +108,14 @@ enum tmf8829_log_level
 #endif
 
 /**
- * @brief Minimum @ref tmf8829_driver_t::scratch_len in bytes.
+ * @brief Minimum @ref tmf8829_driver_t::buffer_len in bytes.
  *
  * Used for register staging and bootloader payloads. Larger buffers are required
  * for FIFO download with big chunks.
  * @hideinitializer
  */
-#ifndef TMF8829_MIN_SCRATCH_SIZE
-#  define TMF8829_MIN_SCRATCH_SIZE      256u
+#ifndef TMF8829_MIN_BUFFER_SIZE
+#  define TMF8829_MIN_BUFFER_SIZE      256u
 #endif
 
 #ifdef __cplusplus
