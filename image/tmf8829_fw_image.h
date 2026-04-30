@@ -27,10 +27,6 @@ extern "C" {
 /** ROM copy of the downloadable measurement-application image. */
 extern const uint8_t tmf8829_fw_image[TMF8829_FW_IMAGE_NUM_BYTES];
 
-/* Backward-compatible aliases for previous naming. */
-#define TMF8829_VENDOR_IMAGE_NUM_BYTES TMF8829_FW_IMAGE_NUM_BYTES
-#define tmf8829_vendor_image           tmf8829_fw_image
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

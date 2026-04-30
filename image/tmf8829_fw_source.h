@@ -44,9 +44,6 @@ extern "C" {
  */
 int tmf8829_fw_source_read(tmf8829_driver_t* drv, uint32_t offset, uint8_t* buf, uint32_t len, uint32_t* image_total_size);
 
-/* Backward-compatible alias for previous naming. */
-#define tmf8829_default_image_read tmf8829_fw_source_read
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
