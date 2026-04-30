@@ -270,6 +270,11 @@ int tmf8829_disable_interrupts(tmf8829_driver_t* drv, uint8_t mask);
 int tmf8829_soft_reset(tmf8829_driver_t* drv);
 
 /**
+ * @brief Write @ref TMF8829_RESET_HARD_MASK to @ref TMF8829_REG_RESET and wait until CPU is ready.
+ */
+int tmf8829_hard_reset(tmf8829_driver_t* drv);
+
+/**
  * @brief Request standby if the CPU is running (sets @ref TMF8829_ENABLE_POFF_MASK).
  */
 int tmf8829_standby(tmf8829_driver_t* drv);

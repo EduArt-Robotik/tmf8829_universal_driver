@@ -275,6 +275,20 @@ int tmf8829_soft_reset(tmf8829_driver_t* drv) {
   return TMF8829_OK;
 }
 
+int tmf8829_hard_reset(tmf8829_driver_t* drv) {
+  uint8_t v = TMF8829_RESET_HARD_MASK;
+  int rc;
+  if (!tmf8829_internal_is_initialised(drv)) {
+    return TMF8829_E_PARAM;
+  }
+  if (bus_write(drv, TMF8829_REG_RESET, &v, 1) != TMF8829_OK) {
+    return TMF8829_E_BUS;
+  }
+  clk_reset(drv);
+  rc = tmf8829_is_cpu_ready(drv, TMF8829_CPU_READY_TIMEOUT_MS);
+  return rc;
+}
+
 int tmf8829_standby(tmf8829_driver_t* drv) {
   uint8_t en;
   if (!tmf8829_internal_is_initialised(drv)) {
