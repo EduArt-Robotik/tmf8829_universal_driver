@@ -16,34 +16,28 @@
 
 namespace tmf8829_test {
 
-class FakeClock
-{
+class FakeClock {
 public:
-    /// Pointer to the FakeClock the C thunks dispatch to. Set/cleared by Fixture.
-    static thread_local FakeClock *active;
+  /// Pointer to the FakeClock the C thunks dispatch to. Set/cleared by Fixture.
+  static thread_local FakeClock* active;
 
-    std::vector<std::uint32_t> delays;
-    std::uint32_t              now_us = 0u;
+  std::vector<std::uint32_t> delays;
+  std::uint32_t now_us = 0u;
 
-    void delay_us(std::uint32_t us)
-    {
-        delays.push_back(us);
-        now_us += us;
+  void delay_us(std::uint32_t us) {
+    delays.push_back(us);
+    now_us += us;
+  }
+
+  std::uint32_t systick_us() const { return now_us; }
+
+  // C-callable thunks to bind into tmf8829_ops_t.
+  static void c_delay(std::uint32_t us) {
+    if (active != nullptr) {
+      active->delay_us(us);
     }
-
-    std::uint32_t systick_us() const { return now_us; }
-
-    // C-callable thunks to bind into tmf8829_ops_t.
-    static void c_delay(std::uint32_t us)
-    {
-        if (active != nullptr) {
-            active->delay_us(us);
-        }
-    }
-    static std::uint32_t c_systick(void)
-    {
-        return active != nullptr ? active->systick_us() : 0u;
-    }
+  }
+  static std::uint32_t c_systick(void) { return active != nullptr ? active->systick_us() : 0u; }
 };
 
 } // namespace tmf8829_test

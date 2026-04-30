@@ -10,9 +10,8 @@
  * translation units (e.g. test_enable.cpp and test_interrupts.cpp).
  */
 
-#include <catch2/catch_all.hpp>
-
 #include <array>
+#include <catch2/catch_all.hpp>
 #include <cstdint>
 #include <cstring>
 
@@ -25,138 +24,133 @@ namespace {
 /* Trivial fakes used only to build a "well-formed" ops table. Behavioural
  * tests use richer fakes in tests/support/. */
 
-int   fake_read (tmf8829_driver_t*, uint8_t, uint8_t*, uint16_t)        { return 0; }
-int   fake_write(tmf8829_driver_t*, uint8_t, const uint8_t*, uint16_t)  { return 0; }
-void  fake_delay_us (uint32_t)                                           {}
-uint32_t fake_systick_us(void)                                           { return 0; }
-void  fake_write_pin_enable(tmf8829_driver_t*, int)                      {}
+int fake_read(tmf8829_driver_t*, uint8_t, uint8_t*, uint16_t) {
+  return 0;
+}
+int fake_write(tmf8829_driver_t*, uint8_t, const uint8_t*, uint16_t) {
+  return 0;
+}
+void fake_delay_us(uint32_t) {
+}
+uint32_t fake_systick_us(void) {
+  return 0;
+}
+void fake_write_pin_enable(tmf8829_driver_t*, int) {
+}
 
 const tmf8829_ops_t kCompleteOps = {
-    fake_read,
-    fake_write,
-    fake_delay_us,
-    fake_systick_us,
-    fake_write_pin_enable,
-    /* read_pin_int = */ nullptr,
+  fake_read,
+  fake_write,
+  fake_delay_us,
+  fake_systick_us,
+  fake_write_pin_enable,
+  /* read_pin_int = */ nullptr,
 };
 
 /* Minimal driver instance for tests that need a "valid" config. */
 struct BufferedDriver {
-    std::array<std::uint8_t, TMF8829_MIN_BUFFER_SIZE> buf{};
-    tmf8829_driver_t drv{};
+  std::array<std::uint8_t, TMF8829_MIN_BUFFER_SIZE> buf{};
+  tmf8829_driver_t drv{};
 
-    BufferedDriver()
-    {
-        drv.bus         = TMF8829_BUS_I2C;
-        drv.i2c_addr    = TMF8829_DEFAULT_I2C_ADDR;
-        drv.buffer      = buf.data();
-        drv.buffer_len  = static_cast<std::uint16_t>(buf.size());
-    }
+  BufferedDriver() {
+    drv.bus        = TMF8829_BUS_I2C;
+    drv.i2c_addr   = TMF8829_DEFAULT_I2C_ADDR;
+    drv.buffer     = buf.data();
+    drv.buffer_len = static_cast<std::uint16_t>(buf.size());
+  }
 };
 
 } /* namespace */
 
-TEST_CASE("error code conventions", "[tmf8829][smoke]")
-{
-    REQUIRE(TMF8829_OK == 0);
-    REQUIRE(TMF8829_E_PARAM           < 0);
-    REQUIRE(TMF8829_E_BUS             < 0);
-    REQUIRE(TMF8829_E_TIMEOUT         < 0);
-    REQUIRE(TMF8829_E_NO_RESULT       < 0);
-    REQUIRE(TMF8829_E_BOOTLOADER      < 0);
-    REQUIRE(TMF8829_E_STATE           < 0);
-    REQUIRE(TMF8829_E_NOT_IMPLEMENTED < 0);
+TEST_CASE("error code conventions", "[tmf8829][smoke]") {
+  REQUIRE(TMF8829_OK == 0);
+  REQUIRE(TMF8829_E_PARAM < 0);
+  REQUIRE(TMF8829_E_BUS < 0);
+  REQUIRE(TMF8829_E_TIMEOUT < 0);
+  REQUIRE(TMF8829_E_NO_RESULT < 0);
+  REQUIRE(TMF8829_E_BOOTLOADER < 0);
+  REQUIRE(TMF8829_E_STATE < 0);
+  REQUIRE(TMF8829_E_NOT_IMPLEMENTED < 0);
 }
 
-TEST_CASE("public types have non-zero size", "[tmf8829][smoke]")
-{
-    STATIC_REQUIRE(sizeof(tmf8829_driver_t) > 0);
-    STATIC_REQUIRE(sizeof(tmf8829_ops_t)    > 0);
-    STATIC_REQUIRE(sizeof(tmf8829_bus_t)    > 0);
-    STATIC_REQUIRE(sizeof(tmf8829_err_t)    > 0);
+TEST_CASE("public types have non-zero size", "[tmf8829][smoke]") {
+  STATIC_REQUIRE(sizeof(tmf8829_driver_t) > 0);
+  STATIC_REQUIRE(sizeof(tmf8829_ops_t) > 0);
+  STATIC_REQUIRE(sizeof(tmf8829_bus_t) > 0);
+  STATIC_REQUIRE(sizeof(tmf8829_err_t) > 0);
 }
 
-TEST_CASE("driver version matches release package", "[tmf8829][smoke]")
-{
-    REQUIRE(TMF8829_DRIVER_VERSION_MAJOR == 0);
-    REQUIRE(TMF8829_DRIVER_VERSION_MINOR == 1);
-    REQUIRE(TMF8829_DRIVER_VERSION_PATCH == 0);
+TEST_CASE("driver version matches release package", "[tmf8829][smoke]") {
+  REQUIRE(TMF8829_DRIVER_VERSION_MAJOR == 0);
+  REQUIRE(TMF8829_DRIVER_VERSION_MINOR == 1);
+  REQUIRE(TMF8829_DRIVER_VERSION_PATCH == 0);
 }
 
-TEST_CASE("init rejects null driver", "[tmf8829][init]")
-{
-    REQUIRE(tmf8829_init(nullptr, &kCompleteOps) == TMF8829_E_PARAM);
+TEST_CASE("init rejects null driver", "[tmf8829][init]") {
+  REQUIRE(tmf8829_init(nullptr, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects null ops", "[tmf8829][init]")
-{
-    BufferedDriver d;
-    REQUIRE(tmf8829_init(&d.drv, nullptr) == TMF8829_E_PARAM);
+TEST_CASE("init rejects null ops", "[tmf8829][init]") {
+  BufferedDriver d;
+  REQUIRE(tmf8829_init(&d.drv, nullptr) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects ops missing required callbacks", "[tmf8829][init]")
-{
-    BufferedDriver d;
-    tmf8829_ops_t partial = {};
-    REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
+TEST_CASE("init rejects ops missing required callbacks", "[tmf8829][init]") {
+  BufferedDriver d;
+  tmf8829_ops_t partial = {};
+  REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
 
-    /* read alone is not enough */
-    partial.read = fake_read;
-    REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
+  /* read alone is not enough */
+  partial.read = fake_read;
+  REQUIRE(tmf8829_init(&d.drv, &partial) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects missing buffer", "[tmf8829][init]")
-{
-    tmf8829_driver_t drv{};
-    drv.bus      = TMF8829_BUS_I2C;
-    drv.i2c_addr = TMF8829_DEFAULT_I2C_ADDR;
-    /* No working buffer */
-    REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
+TEST_CASE("init rejects missing buffer", "[tmf8829][init]") {
+  tmf8829_driver_t drv{};
+  drv.bus      = TMF8829_BUS_I2C;
+  drv.i2c_addr = TMF8829_DEFAULT_I2C_ADDR;
+  /* No working buffer */
+  REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects undersized buffer", "[tmf8829][init]")
-{
-    std::array<std::uint8_t, 32> tiny{};
-    tmf8829_driver_t drv{};
-    drv.bus         = TMF8829_BUS_I2C;
-    drv.i2c_addr    = TMF8829_DEFAULT_I2C_ADDR;
-    drv.buffer      = tiny.data();
-    drv.buffer_len  = static_cast<std::uint16_t>(tiny.size());
-    REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
+TEST_CASE("init rejects undersized buffer", "[tmf8829][init]") {
+  std::array<std::uint8_t, 32> tiny{};
+  tmf8829_driver_t drv{};
+  drv.bus        = TMF8829_BUS_I2C;
+  drv.i2c_addr   = TMF8829_DEFAULT_I2C_ADDR;
+  drv.buffer     = tiny.data();
+  drv.buffer_len = static_cast<std::uint16_t>(tiny.size());
+  REQUIRE(tmf8829_init(&drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init rejects invalid I2C address", "[tmf8829][init]")
-{
-    BufferedDriver d;
-    d.drv.i2c_addr = 0xFF; /* > 0x7F: not a valid 7-bit address */
-    REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_E_PARAM);
+TEST_CASE("init rejects invalid I2C address", "[tmf8829][init]") {
+  BufferedDriver d;
+  d.drv.i2c_addr = 0xFF; /* > 0x7F: not a valid 7-bit address */
+  REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_E_PARAM);
 }
 
-TEST_CASE("init succeeds with a valid I2C configuration", "[tmf8829][init]")
-{
-    BufferedDriver d;
-    REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
-    REQUIRE(d.drv.ops == &kCompleteOps);
+TEST_CASE("init succeeds with a valid I2C configuration", "[tmf8829][init]") {
+  BufferedDriver d;
+  REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
+  REQUIRE(d.drv.ops == &kCompleteOps);
 }
 
-TEST_CASE("init succeeds with a valid SPI configuration", "[tmf8829][init]")
-{
-    BufferedDriver d;
-    d.drv.bus      = TMF8829_BUS_SPI;
-    d.drv.i2c_addr = 0; /* unused for SPI */
-    REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
-    REQUIRE(d.drv.bus == TMF8829_BUS_SPI);
+TEST_CASE("init succeeds with a valid SPI configuration", "[tmf8829][init]") {
+  BufferedDriver d;
+  d.drv.bus      = TMF8829_BUS_SPI;
+  d.drv.i2c_addr = 0; /* unused for SPI */
+  REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
+  REQUIRE(d.drv.bus == TMF8829_BUS_SPI);
 }
 
-TEST_CASE("set_log_level requires an initialised driver", "[tmf8829][init]")
-{
-    tmf8829_driver_t drv{};
-    REQUIRE(tmf8829_set_log_level(&drv, TMF8829_LOG_INFO) == TMF8829_E_PARAM);
+TEST_CASE("set_log_level requires an initialised driver", "[tmf8829][init]") {
+  tmf8829_driver_t drv{};
+  REQUIRE(tmf8829_set_log_level(&drv, TMF8829_LOG_INFO) == TMF8829_E_PARAM);
 
-    BufferedDriver d;
-    REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
-    REQUIRE(tmf8829_set_log_level(&d.drv, TMF8829_LOG_INFO) == TMF8829_OK);
-    REQUIRE(d.drv.log_level == TMF8829_LOG_INFO);
+  BufferedDriver d;
+  REQUIRE(tmf8829_init(&d.drv, &kCompleteOps) == TMF8829_OK);
+  REQUIRE(tmf8829_set_log_level(&d.drv, TMF8829_LOG_INFO) == TMF8829_OK);
+  REQUIRE(d.drv.log_level == TMF8829_LOG_INFO);
 }
 
 /* Behavioural tests for tmf8829_enable / tmf8829_disable / tmf8829_is_cpu_ready

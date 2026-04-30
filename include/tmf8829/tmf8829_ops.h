@@ -33,16 +33,14 @@ extern "C" {
  *
  * @return @c 0 on success, negative on failure.
  */
-typedef int (*tmf8829_read_fn)(tmf8829_driver_t *drv,
-                               uint8_t reg, uint8_t *buf, uint16_t len);
+typedef int (*tmf8829_read_fn)(tmf8829_driver_t* drv, uint8_t reg, uint8_t* buf, uint16_t len);
 
 /**
  * @brief Write @p len bytes from @p buf starting at register @p reg.
  *
  * @return @c 0 on success, negative on failure.
  */
-typedef int (*tmf8829_write_fn)(tmf8829_driver_t *drv,
-                                uint8_t reg, const uint8_t *buf, uint16_t len);
+typedef int (*tmf8829_write_fn)(tmf8829_driver_t* drv, uint8_t reg, const uint8_t* buf, uint16_t len);
 
 /**
  * @brief Busy-wait for at least @p us microseconds (resolution is host-defined).
@@ -59,7 +57,7 @@ typedef uint32_t (*tmf8829_systick_us_fn)(void);
  *
  * Pin mux / mode must be configured before @ref tmf8829_init.
  */
-typedef void (*tmf8829_write_pin_enable_fn)(tmf8829_driver_t *drv, int high);
+typedef void (*tmf8829_write_pin_enable_fn)(tmf8829_driver_t* drv, int high);
 
 /**
  * @brief Optional: read the IRQ GPIO level for this instance.
@@ -68,7 +66,7 @@ typedef void (*tmf8829_write_pin_enable_fn)(tmf8829_driver_t *drv, int high);
  *
  * @return @c 1 if the interrupt line is asserted, @c 0 if deasserted, negative on error.
  */
-typedef int (*tmf8829_read_pin_int_fn)(tmf8829_driver_t *drv);
+typedef int (*tmf8829_read_pin_int_fn)(tmf8829_driver_t* drv);
 
 /**
  * @brief Set of platform callbacks required by @ref tmf8829_init.
@@ -76,14 +74,13 @@ typedef int (*tmf8829_read_pin_int_fn)(tmf8829_driver_t *drv);
  * Declare one @c const instance per port (e.g. STM32 HAL) and pass its address
  * to every sensor on that port.
  */
-struct tmf8829_ops
-{
-    tmf8829_read_fn               read;             /**< Required: register read. */
-    tmf8829_write_fn              write;            /**< Required: register write. */
-    tmf8829_delay_us_fn           delay_us;         /**< Required: microsecond delay. */
-    tmf8829_systick_us_fn         systick_us;       /**< Required: microsecond time base. */
-    tmf8829_write_pin_enable_fn   write_pin_enable; /**< Required: enable power pin. */
-    tmf8829_read_pin_int_fn       read_pin_int;     /**< Optional: IRQ pin; may be @c NULL. */
+struct tmf8829_ops {
+  tmf8829_read_fn read;                         /**< Required: register read. */
+  tmf8829_write_fn write;                       /**< Required: register write. */
+  tmf8829_delay_us_fn delay_us;                 /**< Required: microsecond delay. */
+  tmf8829_systick_us_fn systick_us;             /**< Required: microsecond time base. */
+  tmf8829_write_pin_enable_fn write_pin_enable; /**< Required: enable power pin. */
+  tmf8829_read_pin_int_fn read_pin_int;         /**< Optional: IRQ pin; may be @c NULL. */
 };
 
 #ifdef __cplusplus

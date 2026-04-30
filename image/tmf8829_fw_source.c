@@ -8,40 +8,37 @@
  */
 
 #include "tmf8829_fw_source.h"
-#include "tmf8829_fw_image.h"
 
 #include <string.h>
 
-int tmf8829_fw_source_read(tmf8829_driver_t *drv,
-                           uint32_t offset,
-                           uint8_t *buf, uint32_t len,
-                           uint32_t *image_total_size)
-{
-    const uint32_t image_bytes = (uint32_t)sizeof(tmf8829_fw_image);
+#include "tmf8829_fw_image.h"
 
-    (void)drv;
+int tmf8829_fw_source_read(tmf8829_driver_t* drv, uint32_t offset, uint8_t* buf, uint32_t len, uint32_t* image_total_size) {
+  const uint32_t image_bytes = (uint32_t)sizeof(tmf8829_fw_image);
 
-    if (image_total_size != NULL) {
-        *image_total_size = image_bytes;
-    }
+  (void)drv;
 
-    /* Size-only probe (e.g. FIFO download path). */
-    if (buf == NULL && len == 0u) {
-        return 0;
-    }
+  if (image_total_size != NULL) {
+    *image_total_size = image_bytes;
+  }
 
-    if (buf == NULL) {
-        return TMF8829_E_PARAM;
-    }
+  /* Size-only probe (e.g. FIFO download path). */
+  if (buf == NULL && len == 0u) {
+    return 0;
+  }
 
-    if (offset >= image_bytes) {
-        return 0;
-    }
+  if (buf == NULL) {
+    return TMF8829_E_PARAM;
+  }
 
-    {
-        uint32_t remaining = image_bytes - offset;
-        uint32_t to_copy   = (len < remaining) ? len : remaining;
-        memcpy(buf, &tmf8829_fw_image[offset], to_copy);
-        return (int)to_copy;
-    }
+  if (offset >= image_bytes) {
+    return 0;
+  }
+
+  {
+    uint32_t remaining = image_bytes - offset;
+    uint32_t to_copy   = (len < remaining) ? len : remaining;
+    memcpy(buf, &tmf8829_fw_image[offset], to_copy);
+    return (int)to_copy;
+  }
 }

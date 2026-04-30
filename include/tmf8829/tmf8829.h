@@ -29,32 +29,32 @@ extern "C" {
 #include "tmf8829_types.h"
 
 /** Major version of this driver package (header + @c tmf8829.c). */
-#define TMF8829_DRIVER_VERSION_MAJOR    0
+#define TMF8829_DRIVER_VERSION_MAJOR 0
 /** Minor version of this driver package. */
-#define TMF8829_DRIVER_VERSION_MINOR    1
+#define TMF8829_DRIVER_VERSION_MINOR 1
 /** Patch level of this driver package. */
-#define TMF8829_DRIVER_VERSION_PATCH    0
+#define TMF8829_DRIVER_VERSION_PATCH 0
 
 /**
  * @brief Microseconds to hold the enable pin low before power-on (cap discharge).
  * @hideinitializer
  */
 #ifndef TMF8829_ENABLE_CAP_DISCHARGE_US
-#  define TMF8829_ENABLE_CAP_DISCHARGE_US   3000u
+#define TMF8829_ENABLE_CAP_DISCHARGE_US 3000u
 #endif
 /**
  * @brief Microseconds to wait after driving enable high before polling CPU ready.
  * @hideinitializer
  */
 #ifndef TMF8829_ENABLE_RAMP_US
-#  define TMF8829_ENABLE_RAMP_US            3000u
+#define TMF8829_ENABLE_RAMP_US 3000u
 #endif
 /**
  * @brief Default millisecond budget for @ref tmf8829_is_cpu_ready inside @ref tmf8829_enable.
  * @hideinitializer
  */
 #ifndef TMF8829_CPU_READY_TIMEOUT_MS
-#  define TMF8829_CPU_READY_TIMEOUT_MS      3u
+#define TMF8829_CPU_READY_TIMEOUT_MS 3u
 #endif
 
 /**
@@ -63,7 +63,7 @@ extern "C" {
  * @hideinitializer
  */
 #ifndef TMF8829_WAKEUP_CPU_READY_TIMEOUT_MS
-#  define TMF8829_WAKEUP_CPU_READY_TIMEOUT_MS  3u
+#define TMF8829_WAKEUP_CPU_READY_TIMEOUT_MS 3u
 #endif
 
 /**
@@ -73,8 +73,7 @@ extern "C" {
  * @param[in] level Bit mask compatible with @ref tmf8829_log_level.
  * @param[in] msg   NUL-terminated message.
  */
-typedef void (*tmf8829_log_fn)(tmf8829_driver_t *drv,
-                               int level, const char *msg);
+typedef void (*tmf8829_log_fn)(tmf8829_driver_t* drv, int level, const char* msg);
 
 /**
  * @brief Invoked once per FIFO read with the fused pre-header and frame header.
@@ -84,8 +83,7 @@ typedef void (*tmf8829_log_fn)(tmf8829_driver_t *drv,
  *                  + @c TMF8829_FRAME_HEADER_SIZE bytes).
  * @param[in] len   Number of bytes in @p data.
  */
-typedef void (*tmf8829_on_stream_header_fn)(tmf8829_driver_t *drv,
-                                            const uint8_t *data, uint16_t len);
+typedef void (*tmf8829_on_stream_header_fn)(tmf8829_driver_t* drv, const uint8_t* data, uint16_t len);
 
 /**
  * @brief Invoked for each result payload chunk read from the FIFO.
@@ -94,8 +92,7 @@ typedef void (*tmf8829_on_stream_header_fn)(tmf8829_driver_t *drv,
  * @param[in] data  Chunk stored in @ref tmf8829_driver_t::buffer.
  * @param[in] len   Chunk length in bytes.
  */
-typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t *drv,
-                                     const uint8_t *data, uint16_t len);
+typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t* drv, const uint8_t* data, uint16_t len);
 
 /**
  * @brief Invoked for each histogram payload chunk read from the FIFO.
@@ -104,8 +101,7 @@ typedef void (*tmf8829_on_result_fn)(tmf8829_driver_t *drv,
  * @param[in] data  Chunk stored in @ref tmf8829_driver_t::buffer.
  * @param[in] len   Chunk length in bytes.
  */
-typedef void (*tmf8829_on_histogram_fn)(tmf8829_driver_t *drv,
-                                        const uint8_t *data, uint16_t len);
+typedef void (*tmf8829_on_histogram_fn)(tmf8829_driver_t* drv, const uint8_t* data, uint16_t len);
 
 /**
  * @brief Optional error reporter (driver may call when a recoverable issue occurs).
@@ -113,7 +109,7 @@ typedef void (*tmf8829_on_histogram_fn)(tmf8829_driver_t *drv,
  * @param[in] drv  Driver instance.
  * @param[in] err  Negative @ref tmf8829_err_t or other host-defined code.
  */
-typedef void (*tmf8829_on_error_fn)(tmf8829_driver_t *drv, int err);
+typedef void (*tmf8829_on_error_fn)(tmf8829_driver_t* drv, int err);
 
 /**
  * @brief Read-only access to a firmware image for @ref tmf8829_download_firmware.
@@ -135,10 +131,7 @@ typedef void (*tmf8829_on_error_fn)(tmf8829_driver_t *drv, int err);
  *
  * @return Non-negative byte count on success, negative on error.
  */
-typedef int (*tmf8829_fw_image_read_fn)(tmf8829_driver_t *drv,
-                                        uint32_t offset,
-                                        uint8_t *buf, uint32_t len,
-                                        uint32_t *image_total_size);
+typedef int (*tmf8829_fw_image_read_fn)(tmf8829_driver_t* drv, uint32_t offset, uint8_t* buf, uint32_t len, uint32_t* image_total_size);
 
 /**
  * @brief One driver instance per physical TMF8829.
@@ -147,63 +140,62 @@ typedef int (*tmf8829_fw_image_read_fn)(tmf8829_driver_t *drv,
  * names start with @c _ are reserved for internal use but are visible so the
  * struct can be zero-initialised as static storage.
  */
-struct tmf8829_driver
-{
-    /** Bus protocol for this instance (@ref TMF8829_BUS_I2C or @ref TMF8829_BUS_SPI). */
-    tmf8829_bus_t                 bus;
-    /** I2C 7-bit address when @ref bus is @ref TMF8829_BUS_I2C; ignored for SPI. */
-    uint8_t                       i2c_addr;
-    /** Opaque handle passed to @ref tmf8829_ops_t callbacks (e.g. HAL handle). */
-    void                         *user_ctx;
-    /** Platform callbacks; set by @ref tmf8829_init from its argument. */
-    const tmf8829_ops_t          *ops;
-    /** Caller-owned buffer for register IO and download staging. */
-    uint8_t                      *buffer;
-    /** Size of @ref buffer in bytes; must be at least @ref TMF8829_MIN_BUFFER_SIZE. */
-    uint16_t                      buffer_len;
-    /** Bit mask: @ref tmf8829_log_level; used if @ref log is non-@c NULL. */
-    uint8_t                       log_level;
-    /** Optional log sink; may be @c NULL. */
-    tmf8829_log_fn                log;
-    /** Optional: called with stream header bytes; may be @c NULL. */
-    tmf8829_on_stream_header_fn  on_stream_header;
-    /** Optional: called per result chunk; may be @c NULL. */
-    tmf8829_on_result_fn          on_result;
-    /** Optional: called per histogram chunk; may be @c NULL. */
-    tmf8829_on_histogram_fn       on_histogram;
-    /** Optional error callback; may be @c NULL. */
-    tmf8829_on_error_fn           on_error;
-    /** Optional image reader for @ref tmf8829_download_firmware; may be @c NULL. */
-    tmf8829_fw_image_read_fn      fw_image_read;
+struct tmf8829_driver {
+  /** Bus protocol for this instance (@ref TMF8829_BUS_I2C or @ref TMF8829_BUS_SPI). */
+  tmf8829_bus_t bus;
+  /** I2C 7-bit address when @ref bus is @ref TMF8829_BUS_I2C; ignored for SPI. */
+  uint8_t i2c_addr;
+  /** Opaque handle passed to @ref tmf8829_ops_t callbacks (e.g. HAL handle). */
+  void* user_ctx;
+  /** Platform callbacks; set by @ref tmf8829_init from its argument. */
+  const tmf8829_ops_t* ops;
+  /** Caller-owned buffer for register IO and download staging. */
+  uint8_t* buffer;
+  /** Size of @ref buffer in bytes; must be at least @ref TMF8829_MIN_BUFFER_SIZE. */
+  uint16_t buffer_len;
+  /** Bit mask: @ref tmf8829_log_level; used if @ref log is non-@c NULL. */
+  uint8_t log_level;
+  /** Optional log sink; may be @c NULL. */
+  tmf8829_log_fn log;
+  /** Optional: called with stream header bytes; may be @c NULL. */
+  tmf8829_on_stream_header_fn on_stream_header;
+  /** Optional: called per result chunk; may be @c NULL. */
+  tmf8829_on_result_fn on_result;
+  /** Optional: called per histogram chunk; may be @c NULL. */
+  tmf8829_on_histogram_fn on_histogram;
+  /** Optional error callback; may be @c NULL. */
+  tmf8829_on_error_fn on_error;
+  /** Optional image reader for @ref tmf8829_download_firmware; may be @c NULL. */
+  tmf8829_fw_image_read_fn fw_image_read;
 
-    /**
-     * Host timer ticks that correspond to one millisecond (for clock correction).
-     * If @c 0 after @ref tmf8829_init, the driver assumes @c 1000 ticks per ms
-     * (i.e. @ref tmf8829_ops_t::systick_us counts microseconds). Set before
-     * @ref tmf8829_init if your tick is coarser or finer.
-     */
-    uint32_t                      host_ticks_per_1000_us;
+  /**
+   * Host timer ticks that correspond to one millisecond (for clock correction).
+   * If @c 0 after @ref tmf8829_init, the driver assumes @c 1000 ticks per ms
+   * (i.e. @ref tmf8829_ops_t::systick_us counts microseconds). Set before
+   * @ref tmf8829_init if your tick is coarser or finer.
+   */
+  uint32_t host_ticks_per_1000_us;
 
-    /**
-     * Cached configuration page (@ref TMF8829_CFG_PAGE_SIZE bytes).
-     * Filled by @ref tmf8829_get_configuration; consumed by @ref tmf8829_set_configuration.
-     */
-    uint8_t                       config[TMF8829_CFG_PAGE_SIZE];
+  /**
+   * Cached configuration page (@ref TMF8829_CFG_PAGE_SIZE bytes).
+   * Filled by @ref tmf8829_get_configuration; consumed by @ref tmf8829_set_configuration.
+   */
+  uint8_t config[TMF8829_CFG_PAGE_SIZE];
 
-    /** Device serial number (little-endian), updated by @ref tmf8829_read_device_info. */
-    uint32_t                      device_serial_number;
-    /** Application version triple + build, from registers; see @ref tmf8829_read_device_info. */
-    uint8_t                       app_version[4];
-    /** Chip id / revision bytes from @ref TMF8829_REG_CID_RID. */
-    uint8_t                       chip_version[2];
+  /** Device serial number (little-endian), updated by @ref tmf8829_read_device_info. */
+  uint32_t device_serial_number;
+  /** Application version triple + build, from registers; see @ref tmf8829_read_device_info. */
+  uint8_t app_version[4];
+  /** Chip id / revision bytes from @ref TMF8829_REG_CID_RID. */
+  uint8_t chip_version[2];
 
-    uint16_t                      _clk_corr_ratio_uq;   /**< Internal: UQ15 clock ratio vs nominal. */
-    uint8_t                       _clk_corr_enable;       /**< Internal: non-zero if pairs are collected. */
-    uint8_t                       _clk_corr_idx;          /**< Internal: ring index for correction pairs. */
-    uint8_t                       _cyclic_running;        /**< Internal: measurement active flag. */
-    uint32_t                      _host_ticks   [TMF8829_CLK_CORRECTION_PAIRS];   /**< Internal */
-    uint32_t                      _device_ticks [TMF8829_CLK_CORRECTION_PAIRS];   /**< Internal */
-    uint32_t                      _initialised;           /**< Internal: magic after @ref tmf8829_init. */
+  uint16_t _clk_corr_ratio_uq;                          /**< Internal: UQ15 clock ratio vs nominal. */
+  uint8_t _clk_corr_enable;                             /**< Internal: non-zero if pairs are collected. */
+  uint8_t _clk_corr_idx;                                /**< Internal: ring index for correction pairs. */
+  uint8_t _cyclic_running;                              /**< Internal: measurement active flag. */
+  uint32_t _host_ticks[TMF8829_CLK_CORRECTION_PAIRS];   /**< Internal */
+  uint32_t _device_ticks[TMF8829_CLK_CORRECTION_PAIRS]; /**< Internal */
+  uint32_t _initialised;                                /**< Internal: magic after @ref tmf8829_init. */
 };
 
 /**
@@ -214,26 +206,26 @@ struct tmf8829_driver
  *
  * @return @ref TMF8829_OK on success, or negative @ref tmf8829_err_t.
  */
-int tmf8829_init(tmf8829_driver_t *drv, const tmf8829_ops_t *ops);
+int tmf8829_init(tmf8829_driver_t* drv, const tmf8829_ops_t* ops);
 
 /**
  * @brief Update @ref tmf8829_driver_t::log_level for optional @ref tmf8829_driver_t::log use.
  *
  * @return @ref TMF8829_OK, or @ref TMF8829_E_PARAM if uninitialised.
  */
-int tmf8829_set_log_level(tmf8829_driver_t *drv, uint8_t level);
+int tmf8829_set_log_level(tmf8829_driver_t* drv, uint8_t level);
 
 /**
  * @brief Power sequence: enable pin low (discharge), high, then wait for CPU ready.
  *
  * @return @ref TMF8829_OK, @ref TMF8829_E_TIMEOUT, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
-int tmf8829_enable(tmf8829_driver_t *drv);
+int tmf8829_enable(tmf8829_driver_t* drv);
 
 /**
  * @brief Drive the enable pin low (sensor off).
  */
-int tmf8829_disable(tmf8829_driver_t *drv);
+int tmf8829_disable(tmf8829_driver_t* drv);
 
 /**
  * @brief Poll @ref TMF8829_REG_ENABLE until @ref TMF8829_ENABLE_CPU_READY_MASK is set or time elapses.
@@ -242,7 +234,7 @@ int tmf8829_disable(tmf8829_driver_t *drv);
  *
  * @return @ref TMF8829_OK when ready, @ref TMF8829_E_TIMEOUT, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
-int tmf8829_is_cpu_ready(tmf8829_driver_t *drv, uint8_t timeout_ms);
+int tmf8829_is_cpu_ready(tmf8829_driver_t* drv, uint8_t timeout_ms);
 
 /**
  * @brief Read @ref TMF8829_REG_INT_STATUS and write-1-to-clear bits in @p mask.
@@ -252,84 +244,83 @@ int tmf8829_is_cpu_ready(tmf8829_driver_t *drv, uint8_t timeout_ms);
  *
  * @return @ref TMF8829_OK, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
-int tmf8829_get_and_clr_interrupts(tmf8829_driver_t *drv,
-                                   uint8_t mask, uint8_t *out_pending);
+int tmf8829_get_and_clr_interrupts(tmf8829_driver_t* drv, uint8_t mask, uint8_t* out_pending);
 
 /**
  * @brief Read-modify-write @ref TMF8829_REG_INT_ENAB to enable @p mask bits.
  */
-int tmf8829_clr_and_enable_interrupts(tmf8829_driver_t *drv, uint8_t mask);
+int tmf8829_clr_and_enable_interrupts(tmf8829_driver_t* drv, uint8_t mask);
 
 /**
  * @brief Read-modify-write @ref TMF8829_REG_INT_ENAB to disable @p mask bits.
  */
-int tmf8829_disable_interrupts(tmf8829_driver_t *drv, uint8_t mask);
+int tmf8829_disable_interrupts(tmf8829_driver_t* drv, uint8_t mask);
 
 /**
  * @brief Write @ref TMF8829_RESET_SOFT_MASK to @ref TMF8829_REG_RESET and reset clock-correction state.
  */
-int tmf8829_soft_reset(tmf8829_driver_t *drv);
+int tmf8829_soft_reset(tmf8829_driver_t* drv);
 
 /**
  * @brief Request standby if the CPU is running (sets @ref TMF8829_ENABLE_POFF_MASK).
  */
-int tmf8829_standby(tmf8829_driver_t *drv);
+int tmf8829_standby(tmf8829_driver_t* drv);
 
 /**
  * @brief Assert power-on (@ref TMF8829_ENABLE_PON_MASK) and wait @ref TMF8829_ENABLE_RAMP_US.
  */
-int tmf8829_power_up(tmf8829_driver_t *drv);
+int tmf8829_power_up(tmf8829_driver_t* drv);
 
 /**
  * @brief Leave low-power: if CPU not ready, set RAM boot path + PON and poll readiness.
  */
-int tmf8829_wakeup(tmf8829_driver_t *drv);
+int tmf8829_wakeup(tmf8829_driver_t* drv);
 
 /**
  * @brief Heuristic wakeup check: reads enable register and CPU-ready bit.
  *
  * @return @c 1 if CPU ready, @c 0 if not, or negative @ref tmf8829_err_t on bus failure.
  */
-int tmf8829_is_device_wakeup(tmf8829_driver_t *drv);
+int tmf8829_is_device_wakeup(tmf8829_driver_t* drv);
 
 /**
  * @brief Read serial number, app version, and chip id registers into @p drv.
  *
  * @return @ref TMF8829_OK or a negative error code.
  */
-int tmf8829_read_device_info(tmf8829_driver_t *drv);
+int tmf8829_read_device_info(tmf8829_driver_t* drv);
 
 /**
  * @brief Issue a raw application command byte and poll @ref TMF8829_REG_CMD_STAT for acceptance.
  *
  * @param[in] cmd  Opcode (e.g. @ref TMF8829_CMD_MEASURE).
  */
-int tmf8829_command(tmf8829_driver_t *drv, uint8_t cmd);
+int tmf8829_command(tmf8829_driver_t* drv, uint8_t cmd);
 
 /** @brief @ref TMF8829_CMD_LOAD_CONFIG_PAGE */
-int tmf8829_cmd_load_config_page(tmf8829_driver_t *drv);
+int tmf8829_cmd_load_config_page(tmf8829_driver_t* drv);
 /** @brief @ref TMF8829_CMD_WRITE_PAGE using @ref tmf8829_driver_t::config */
-int tmf8829_cmd_write_page(tmf8829_driver_t *drv);
+int tmf8829_cmd_write_page(tmf8829_driver_t* drv);
 
 /**
  * @brief After @ref tmf8829_cmd_load_config_page, read the configuration page into @ref tmf8829_driver_t::config.
  */
-int tmf8829_get_configuration(tmf8829_driver_t *drv);
+int tmf8829_get_configuration(tmf8829_driver_t* drv);
 
 /**
  * @brief Write @ref tmf8829_driver_t::config to the device (load page + write page sequence).
  */
-int tmf8829_set_configuration(tmf8829_driver_t *drv);
+int tmf8829_set_configuration(tmf8829_driver_t* drv);
 
 /** @brief @ref TMF8829_CMD_MEASURE */
-int tmf8829_start_measurement(tmf8829_driver_t *drv);
+int tmf8829_start_measurement(tmf8829_driver_t* drv);
 /** @brief @ref TMF8829_CMD_STOP */
-int tmf8829_stop_measurement(tmf8829_driver_t *drv);
+int tmf8829_stop_measurement(tmf8829_driver_t* drv);
 
 /** @brief Bootloader: @ref TMF8829_BL_CMD_STAT_SPI_OFF */
-int tmf8829_bootloader_spi_off(tmf8829_driver_t *drv);
+int tmf8829_bootloader_spi_off(tmf8829_driver_t* drv);
 /** @brief Bootloader: @ref TMF8829_BL_CMD_STAT_I2C_OFF */
-int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv);
+int tmf8829_bootloader_i2c_off(tmf8829_driver_t* drv);
 
 /**
  * @brief Stream firmware through @ref tmf8829_driver_t::fw_image_read and start the RAM application.
@@ -342,8 +333,7 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t *drv);
  *
  * @return @ref TMF8829_OK on success, negative @ref tmf8829_err_t or callback error code.
  */
-int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
-                              int use_fifo);
+int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, int use_fifo);
 
 /**
  * @brief Read a result frame from the FIFO (header via @ref TMF8829_REG_FIFO_STATUS, payload via @ref TMF8829_REG_FIFO).
@@ -354,35 +344,35 @@ int tmf8829_download_firmware(tmf8829_driver_t *drv, uint32_t image_start_addr,
  * @return @ref TMF8829_OK if EOF marker matches @ref TMF8829_FRAME_EOF; @ref TMF8829_E_NO_RESULT if wrong frame type
  *         or bad footer; @ref TMF8829_E_PARAM / @ref TMF8829_E_BUS as appropriate.
  */
-int tmf8829_read_results(tmf8829_driver_t *drv);
+int tmf8829_read_results(tmf8829_driver_t* drv);
 
 /**
  * @brief Read a histogram frame from the FIFO (same header path as results).
  *
  * @return @ref TMF8829_OK on valid histogram EOF; @ref TMF8829_E_NO_RESULT if not a histogram frame.
  */
-int tmf8829_read_histogram(tmf8829_driver_t *drv);
+int tmf8829_read_histogram(tmf8829_driver_t* drv);
 
 /** @brief Little-endian uint16 from two bytes. */
-uint16_t tmf8829_get_uint16(const uint8_t *data);
+uint16_t tmf8829_get_uint16(const uint8_t* data);
 /** @brief Little-endian uint32 from four bytes. */
-uint32_t tmf8829_get_uint32(const uint8_t *data);
+uint32_t tmf8829_get_uint32(const uint8_t* data);
 /** @brief Write @p value to two bytes, little-endian. */
-void     tmf8829_set_uint16(uint16_t value, uint8_t *data);
+void tmf8829_set_uint16(uint16_t value, uint8_t* data);
 
 /**
  * @brief Bytes per result pixel for a given @ref TMF8829_REG_CFG_RESULT_FORMAT layout byte.
  *
  * Uses @ref TMF8829_RESULT_FORMAT_* masks in @p layout.
  */
-uint8_t  tmf8829_get_pixel_size(uint8_t layout);
+uint8_t tmf8829_get_pixel_size(uint8_t layout);
 
 /**
  * @brief Scale a raw distance using @ref tmf8829_driver_t::_clk_corr_ratio_uq (UQ15).
  *
  * @return Saturated 16-bit corrected distance.
  */
-uint16_t tmf8829_correct_distance(const tmf8829_driver_t *drv, uint16_t distance);
+uint16_t tmf8829_correct_distance(const tmf8829_driver_t* drv, uint16_t distance);
 
 /**
  * @brief Apply @ref tmf8829_correct_distance to each distance field in @ref tmf8829_driver_t::buffer.
@@ -390,22 +380,21 @@ uint16_t tmf8829_correct_distance(const tmf8829_driver_t *drv, uint16_t distance
  * @param[in] size    Number of bytes in buffer to treat as pixels of size @ref tmf8829_get_pixel_size(@p layout).
  * @param[in] layout  Result-format byte (peak count and flags).
  */
-void     tmf8829_correct_distance_data_segment(tmf8829_driver_t *drv,
-                                                 uint16_t size, uint8_t layout);
+void tmf8829_correct_distance_data_segment(tmf8829_driver_t* drv, uint16_t size, uint8_t layout);
 
 /**
  * @brief Enable or disable collection of clock-correction samples in result reads.
  *
  * When enabling, internal ratio state is reset.
  */
-int      tmf8829_clk_correction_set(tmf8829_driver_t *drv, uint8_t enable);
+int tmf8829_clk_correction_set(tmf8829_driver_t* drv, uint8_t enable);
 
 /**
  * @brief Current UQ15 ratio used by @ref tmf8829_correct_distance; nominal unity is 32768.
  *
  * @return Unity ratio if @p drv is @c NULL.
  */
-uint16_t tmf8829_clk_correction_ratio_uq15(const tmf8829_driver_t *drv);
+uint16_t tmf8829_clk_correction_ratio_uq15(const tmf8829_driver_t* drv);
 
 #ifdef __cplusplus
 }

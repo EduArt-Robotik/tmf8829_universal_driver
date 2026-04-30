@@ -10,6 +10,6 @@
 
 namespace tmf8829_test {
 
-thread_local FakeClock *FakeClock::active = nullptr;
+thread_local FakeClock* FakeClock::active = nullptr;
 
 } // namespace tmf8829_test

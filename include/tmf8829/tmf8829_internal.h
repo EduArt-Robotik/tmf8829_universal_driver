@@ -17,12 +17,11 @@ extern "C" {
 #endif
 
 /** Magic value written to @c drv->_initialised by @ref tmf8829_init. */
-#define TMF8829_MAGIC_INITIALISED   0x8829D71Cu
+#define TMF8829_MAGIC_INITIALISED 0x8829D71Cu
 
 /** True if @p drv has been successfully initialised. */
-static inline int tmf8829_internal_is_initialised(const tmf8829_driver_t *drv)
-{
-    return drv != NULL && drv->_initialised == TMF8829_MAGIC_INITIALISED;
+static inline int tmf8829_internal_is_initialised(const tmf8829_driver_t* drv) {
+  return drv != NULL && drv->_initialised == TMF8829_MAGIC_INITIALISED;
 }
 
 #ifdef __cplusplus

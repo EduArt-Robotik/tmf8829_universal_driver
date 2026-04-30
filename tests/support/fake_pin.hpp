@@ -16,17 +16,16 @@ extern "C" {
 
 namespace tmf8829_test {
 
-class FakePin
-{
+class FakePin {
 public:
-    /// Sequence of levels written via tmf8829_ops_t::write_pin_enable.
-    std::vector<int> enable_history;
+  /// Sequence of levels written via tmf8829_ops_t::write_pin_enable.
+  std::vector<int> enable_history;
 
-    /// Returned by read_pin_int. Tests may write directly.
-    int int_level = 0;
+  /// Returned by read_pin_int. Tests may write directly.
+  int int_level = 0;
 
-    void write_pin_enable(int high) { enable_history.push_back(high ? 1 : 0); }
-    int  read_pin_int()             { return int_level; }
+  void write_pin_enable(int high) { enable_history.push_back(high ? 1 : 0); }
+  int read_pin_int() { return int_level; }
 };
 
 } // namespace tmf8829_test
