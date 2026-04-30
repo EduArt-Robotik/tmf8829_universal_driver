@@ -44,6 +44,10 @@ static int bus_write(tmf8829_driver_t* drv, uint8_t reg, const uint8_t* buf, uin
   return TMF8829_OK;
 }
 
+static uint16_t drv_max_write_len(const tmf8829_driver_t* drv) {
+  return (drv->max_write_len != 0u) ? drv->max_write_len : 0xFFFFu;
+}
+
 /**
  * Poll until @p reg's first byte equals @p expected or timeout.
  * Matches vendor tmf8829CheckRegister semantics.
@@ -618,7 +622,14 @@ int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, 
     }
     idx = 0u;
     while (idx < image_size) {
-      uint32_t room = (uint32_t)drv->buffer_len;
+      uint32_t room = TMF8829_BL_MAX_PAYLOAD;
+      uint16_t maxw = drv_max_write_len(drv);
+      if ((uint32_t)maxw < room) {
+        room = (uint32_t)maxw;
+      }
+      if (room == 0u) {
+        return TMF8829_E_PARAM;
+      }
       uint32_t need = image_size - idx;
       chunk_len     = (uint16_t)((need < room) ? need : room);
       n             = drv->fw_image_read(drv, idx, drv->buffer, chunk_len, NULL);
@@ -651,6 +662,16 @@ int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, 
     while (idx < image_size) {
       uint32_t remain = image_size - idx;
       uint32_t maxpl  = TMF8829_BL_MAX_PAYLOAD;
+      uint16_t maxw   = drv_max_write_len(drv);
+      if (maxw <= TMF8829_BL_WR_HEADER) {
+        return TMF8829_E_PARAM;
+      }
+      {
+        uint32_t max_payload_by_bus = (uint32_t)maxw - TMF8829_BL_WR_HEADER;
+        if (max_payload_by_bus < maxpl) {
+          maxpl = max_payload_by_bus;
+        }
+      }
       chunk_len       = (uint16_t)((remain < maxpl) ? remain : maxpl);
       if (TMF8829_BL_WR_HEADER + chunk_len > drv->buffer_len) {
         return TMF8829_E_PARAM;

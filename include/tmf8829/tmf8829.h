@@ -154,6 +154,13 @@ struct tmf8829_driver {
   uint8_t* buffer;
   /** Size of @ref buffer in bytes; must be at least @ref TMF8829_MIN_BUFFER_SIZE. */
   uint16_t buffer_len;
+  /**
+   * Optional per-transfer bus write capability in bytes.
+   *
+   * Limits the payload length passed to @ref tmf8829_ops_t::write in a single call.
+   * Set to @c 0 to disable this extra cap (driver then only uses protocol limits).
+   */
+  uint16_t max_write_len;
   /** Bit mask: @ref tmf8829_log_level; used if @ref log is non-@c NULL. */
   uint8_t log_level;
   /** Optional log sink; may be @c NULL. */
