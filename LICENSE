@@ -26,7 +26,7 @@ Acknowledgments
 
 This project is a clean-room reimplementation of a TMF8829 host driver. The
 public protocol semantics, register layout, command opcodes, and bootloader
-sequence were learned from the reference drivers published by ams-OSRAM AG
+sequence were taken from the reference drivers published by ams-OSRAM AG
 under the MIT license:
 
   Copyright (c) 2024-2025 ams-OSRAM AG
