@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 //
 // Copyright (c) 2026 tmf8829_universal_driver contributors
+// Derived from ams-OSRAM TMF8829 reference drivers (MIT); adapted for portable multi-instance use.
 //
 // Definition of the FakeClock::active thread_local pointer. Lives in its
 // own translation unit so it has exactly one definition across all test

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 //
 // Copyright (c) 2026 tmf8829_universal_driver contributors
+// Derived from ams-OSRAM TMF8829 reference drivers (MIT); adapted for portable multi-instance use.
 //
 // FakePin: records every level the driver writes to the enable pin and
 // optionally returns a scripted value for read_pin_int.

@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: MIT
  *
  * Copyright (c) 2026 tmf8829_universal_driver contributors
+ * Derived from ams-OSRAM TMF8829 reference drivers (MIT); adapted for portable multi-instance use.
  *
  * Internal helpers shared between translation units of the driver.
  * Not part of the public API; this header is not installed.
