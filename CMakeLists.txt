@@ -6,6 +6,9 @@ project(tmf8829_universal_driver
   DESCRIPTION "Portable, multi-instance C11 driver for the ams-OSRAM TMF8829"
 )
 
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 # ----------------------------------------------------------------------------
 # Options
 # ----------------------------------------------------------------------------
@@ -79,3 +82,56 @@ if(TMF8829_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)
 endif()
+
+# ----------------------------------------------------------------------------
+# Install & package export
+# ----------------------------------------------------------------------------
+
+set(tmf8829_install_targets tmf8829_universal)
+if(TARGET tmf8829_default_image)
+  list(APPEND tmf8829_install_targets tmf8829_default_image)
+endif()
+
+install(TARGETS ${tmf8829_install_targets}
+  EXPORT tmf8829_universal_driverTargets
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(DIRECTORY include/tmf8829
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+if(TARGET tmf8829_default_image)
+  install(FILES
+    image/tmf8829_fw_image.h
+    image/tmf8829_fw_source.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+endif()
+
+install(EXPORT tmf8829_universal_driverTargets
+  NAMESPACE tmf8829::
+  FILE tmf8829_universal_driverTargets.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tmf8829_universal_driver
+)
+
+configure_package_config_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tmf8829_universal_driverConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/tmf8829_universal_driverConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tmf8829_universal_driver
+)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/tmf8829_universal_driverConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/tmf8829_universal_driverConfig.cmake
+  ${CMAKE_CURRENT_BINARY_DIR}/tmf8829_universal_driverConfigVersion.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/tmf8829_universal_driver
+)
