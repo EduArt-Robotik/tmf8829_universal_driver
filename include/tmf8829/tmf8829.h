@@ -287,6 +287,15 @@ int tmf8829_is_device_wakeup(tmf8829_driver_t* drv);
 /**
  * @brief Read serial number, app version, and chip id registers into @p drv.
  *
+ * Returns @ref TMF8829_E_STATE if @ref TMF8829_REG_APP_ID reports bootloader
+ * mode (@ref TMF8829_APP_ID__BOOTLOADER, @c 0x80) instead of application mode
+ * (@ref TMF8829_APP_ID__APPLICATION, @c 0x01). It only succeeds if the device
+ * is in application mode (i.e. has the firmware loaded).
+ *
+ * This behavior is kept for parity with the original ams-OSRAM reference
+ * drivers (Linux and Arduino), which also treat bootloader state as an error
+ * in the corresponding device-info routine.
+ *
  * @return @ref TMF8829_OK or a negative error code.
  */
 int tmf8829_read_device_info(tmf8829_driver_t* drv);
