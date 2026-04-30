@@ -66,6 +66,9 @@ extern "C" {
 #define TMF8829_REG_RESET       0xF7u /**< Reset register */
 #define TMF8829_REG_ENABLE      0xF8u /**< Power / boot / status register */
 
+/* EXPECTED chip id of the TMF8829 sensor */
+#define TMF8829_CHIP_ID 0x9Eu /**< Expected value read from @ref TMF8829_REG_ID */
+
 /* RESET register bit masks (write 1 to trigger). */
 #define TMF8829_RESET_SOFT_MASK 0x40u /**< bit 6: soft reset */
 #define TMF8829_RESET_HARD_MASK 0x80u /**< bit 7: hard reset */
