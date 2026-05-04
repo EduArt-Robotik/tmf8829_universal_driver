@@ -14,12 +14,23 @@ jobs:
           - cc: gcc
             cxx: g++
             include_default_image: "OFF"
+            build_type: Release
+            sanitizers: ""
           - cc: gcc
             cxx: g++
             include_default_image: "ON"
+            build_type: Release
+            sanitizers: ""
           - cc: clang
             cxx: clang++
             include_default_image: "ON"
+            build_type: Release
+            sanitizers: ""
+          - cc: gcc
+            cxx: g++
+            include_default_image: "ON"
+            build_type: Debug
+            sanitizers: "-fsanitize=address,undefined -fno-omit-frame-pointer"
 
     env:
       CC: ${{ matrix.cc }}
@@ -35,7 +46,10 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_C_FLAGS="${{ matrix.sanitizers }}"
+          -DCMAKE_CXX_FLAGS="${{ matrix.sanitizers }}"
+          -DCMAKE_EXE_LINKER_FLAGS="${{ matrix.sanitizers }}"
           -DTMF8829_INCLUDE_DEFAULT_IMAGE=${{ matrix.include_default_image }}
 
       - name: Build
