@@ -16,6 +16,7 @@
 
 #include <array>
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 extern "C" {
@@ -49,6 +50,28 @@ public:
   int read_error_after_n  = -1;
   int write_error_after_n = -1;
 
+  /// Auto-response map: after any write to reg R, set reg_file[R] = value.
+  /// Models HW registers that acknowledge commands (e.g. CMD_STAT → READY).
+  std::unordered_map<std::uint8_t, std::uint8_t> write_auto_response;
+
+  /// Non-incrementing registers: reads/writes to these addresses do not
+  /// advance through the register file. Models HW FIFOs.
+  std::unordered_map<std::uint8_t, bool> non_incrementing;
+
+  /// FIFO read queue: when a non-incrementing register is read, bytes are
+  /// consumed from this queue in order. Falls back to reg_file if empty.
+  std::unordered_map<std::uint8_t, std::vector<std::uint8_t> > fifo_read_queue;
+
+  /// Push data into a FIFO read queue for a non-incrementing register.
+  void fifo_push(std::uint8_t reg, std::initializer_list<std::uint8_t> bytes) {
+    auto& q = fifo_read_queue[reg];
+    q.insert(q.end(), bytes.begin(), bytes.end());
+  }
+  void fifo_push(std::uint8_t reg, const std::uint8_t* data, std::size_t len) {
+    auto& q = fifo_read_queue[reg];
+    q.insert(q.end(), data, data + len);
+  }
+
   void preload(std::uint8_t reg, std::uint8_t value) { reg_file[reg] = value; }
   void preload(std::uint8_t reg, std::initializer_list<std::uint8_t> bytes) {
     std::uint16_t r = reg;
@@ -60,8 +83,21 @@ public:
   int do_read(std::uint8_t reg, std::uint8_t* buf, std::uint16_t len) {
     // Snapshot the data we are about to deliver so the op log is faithful.
     std::vector<std::uint8_t> snapshot(len);
+    std::uint8_t addr = reg;
     for (std::uint16_t i = 0; i < len; ++i) {
-      snapshot[i] = reg_file[(reg + i) & 0xFFu];
+      if (non_incrementing.count(addr) > 0) {
+        // Consume from FIFO queue if available, else return reg_file value.
+        auto it = fifo_read_queue.find(addr);
+        if (it != fifo_read_queue.end() && !it->second.empty()) {
+          snapshot[i] = it->second.front();
+          it->second.erase(it->second.begin());
+        } else {
+          snapshot[i] = reg_file[addr];
+        }
+      } else {
+        snapshot[i] = reg_file[addr];
+        addr        = static_cast<std::uint8_t>((addr + 1u) & 0xFFu);
+      }
     }
 
     ops.push_back({ OpKind::Read, reg, snapshot });
@@ -91,9 +127,22 @@ public:
       --write_error_after_n;
     }
 
+    bool fifo_start    = non_incrementing.count(reg) > 0;
+    std::uint8_t waddr = reg;
     for (std::uint16_t i = 0; i < len; ++i) {
-      reg_file[(reg + i) & 0xFFu] = buf[i];
+      reg_file[waddr] = buf[i];
+      // Only advance if start addr is not FIFO and current addr is not FIFO.
+      if (!fifo_start && non_incrementing.count(waddr) == 0) {
+        waddr = static_cast<std::uint8_t>((waddr + 1u) & 0xFFu);
+      }
     }
+
+    // Apply auto-response: simulate HW acknowledging command.
+    auto it = write_auto_response.find(reg);
+    if (it != write_auto_response.end()) {
+      reg_file[reg] = it->second;
+    }
+
     return 0;
   }
 };

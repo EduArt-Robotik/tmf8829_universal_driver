@@ -23,6 +23,10 @@ set(tmf8829_test_sources
   test_enable.cpp
   test_interrupts.cpp
   test_utilities.cpp
+  test_download.cpp
+  test_measurement.cpp
+  test_config.cpp
+  test_clock_correction.cpp
   support/fake_clock.cpp
 )
 

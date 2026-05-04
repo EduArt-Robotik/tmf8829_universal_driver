@@ -154,6 +154,31 @@ TEST_CASE("set_log_level requires an initialised driver", "[tmf8829][init]") {
   REQUIRE(d.drv.log_level == TMF8829_LOG_INFO);
 }
 
+TEST_CASE("multi-instance: two drivers operate independently", "[tmf8829][init]") {
+  // Two separate instances with their own buffers and state.
+  BufferedDriver a;
+  BufferedDriver b;
+
+  a.drv.i2c_addr = 0x41;
+  b.drv.i2c_addr = 0x42;
+
+  REQUIRE(tmf8829_init(&a.drv, &kCompleteOps) == TMF8829_OK);
+  REQUIRE(tmf8829_init(&b.drv, &kCompleteOps) == TMF8829_OK);
+
+  // Mutate one instance, verify the other is unaffected.
+  a.drv.log_level = TMF8829_LOG_DEBUG;
+  REQUIRE(b.drv.log_level == 0u);
+
+  a.drv._clk_corr_ratio_uq = 12345u;
+  REQUIRE(b.drv._clk_corr_ratio_uq == (1u << 15));
+
+  // Both are independently initialised.
+  REQUIRE(tmf8829_set_log_level(&a.drv, TMF8829_LOG_ERROR) == TMF8829_OK);
+  REQUIRE(tmf8829_set_log_level(&b.drv, TMF8829_LOG_VERBOSE) == TMF8829_OK);
+  REQUIRE(a.drv.log_level == TMF8829_LOG_ERROR);
+  REQUIRE(b.drv.log_level == TMF8829_LOG_VERBOSE);
+}
+
 /* Behavioural tests for tmf8829_enable / tmf8829_disable / tmf8829_is_cpu_ready
  * / tmf8829_get_and_clr_interrupts live in their own translation units
  * (test_enable.cpp, test_interrupts.cpp). This file stays focused on the
