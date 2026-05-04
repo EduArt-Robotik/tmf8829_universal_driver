@@ -39,6 +39,13 @@ endif()
 # Core library
 # ----------------------------------------------------------------------------
 
+# Generate version header from CMake project version (single source of truth).
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tmf8829_version.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/generated/tmf8829/tmf8829_version.h
+  @ONLY
+)
+
 set(tmf8829_sources
   src/tmf8829.c
 )
@@ -48,8 +55,13 @@ add_library(tmf8829_universal STATIC ${tmf8829_sources})
 # Friendly alias used by consumers via add_subdirectory().
 add_library(tmf8829::tmf8829 ALIAS tmf8829_universal)
 
+set_target_properties(tmf8829_universal PROPERTIES
+  VERSION ${PROJECT_VERSION}
+)
+
 target_include_directories(tmf8829_universal PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/generated>
   $<INSTALL_INTERFACE:include>
 )
 
@@ -102,6 +114,11 @@ install(TARGETS ${tmf8829_install_targets}
 
 install(DIRECTORY include/tmf8829
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/generated/tmf8829/tmf8829_version.h
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/tmf8829
 )
 
 if(TARGET tmf8829_default_image)

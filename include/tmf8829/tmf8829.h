@@ -28,13 +28,7 @@ extern "C" {
 #include "tmf8829_ops.h"
 #include "tmf8829_regs.h"
 #include "tmf8829_types.h"
-
-/** Major version of this driver package (header + @c tmf8829.c). */
-#define TMF8829_DRIVER_VERSION_MAJOR 0
-/** Minor version of this driver package. */
-#define TMF8829_DRIVER_VERSION_MINOR 1
-/** Patch level of this driver package. */
-#define TMF8829_DRIVER_VERSION_PATCH 0
+#include "tmf8829/tmf8829_version.h"
 
 /**
  * @brief Microseconds to hold the enable pin low before power-on (cap discharge).
