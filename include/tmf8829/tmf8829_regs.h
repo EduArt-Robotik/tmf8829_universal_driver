@@ -216,6 +216,14 @@ extern "C" {
 
 #define TMF8829_CFG_PAGE_SIZE ((unsigned)(TMF8829_REG_CFG_LAST_AVAILABLE - TMF8829_REG_CFG_PERIOD_MS_LSB + 1u))
 
+/* Result format values for TMF8829_REG_CFG_RESULT_FORMAT */
+#define TMF8829_RESULT_FULL_NOISE_MASK      7u
+#define TMF8829_RESULT_SUB_RESULT_MASK      6u
+#define TMF8829_RESULT_XTALK_MASK           5u
+#define TMF8829_RESULT_NOISE_STRENGTH_MASK  4u
+#define TMF8829_RESULT_SIGNAL_STRENGTH_MASK 3u
+#define TMF8829_RESULT_NR_PEAKS_MASK        0u
+
 /* GPIO output-control values for TMF8829_REG_CFG_GPIO_0 ... _GPIO_6 */
 #define TMF8829_GPIO_CTRL_TRISTATE                  0u
 #define TMF8829_GPIO_CTRL_INPUT_IR                  1u
