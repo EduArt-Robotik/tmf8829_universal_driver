@@ -1,0 +1,130 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "default",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "TMF8829_BUILD_TESTS": "ON",
+        "TMF8829_INCLUDE_DEFAULT_IMAGE": "ON",
+        "TMF8829_BUILD_DOCUMENTATION": "OFF"
+      }
+    },
+    {
+      "name": "Debug",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "Release",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "ReleaseWithDocs",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "TMF8829_BUILD_DOCUMENTATION": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "Debug"
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release"
+    },
+    {
+      "name": "ReleaseWithDocs",
+      "configurePreset": "ReleaseWithDocs"
+    },
+    {
+      "name": "DebugClean",
+      "inherits": "Debug",
+      "cleanFirst": true
+    },
+    {
+      "name": "ReleaseClean",
+      "inherits": "Release",
+      "cleanFirst": true
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "Debug",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "Debug"
+        },
+        {
+          "type": "build",
+          "name": "Debug"
+        }
+      ]
+    },
+    {
+      "name": "Release",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "Release"
+        },
+        {
+          "type": "build",
+          "name": "Release"
+        }
+      ]
+    },
+    {
+      "name": "ReleaseWithDocs",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "ReleaseWithDocs"
+        },
+        {
+          "type": "build",
+          "name": "ReleaseWithDocs"
+        }
+      ]
+    },
+    {
+      "name": "DebugClean",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "Debug"
+        },
+        {
+          "type": "build",
+          "name": "DebugClean"
+        }
+      ]
+    },
+    {
+      "name": "ReleaseClean",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "Release"
+        },
+        {
+          "type": "build",
+          "name": "ReleaseClean"
+        }
+      ]
+    }
+  ]
+}
