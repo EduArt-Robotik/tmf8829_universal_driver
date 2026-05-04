@@ -359,6 +359,13 @@ extern "C" {
 
 /** Device clock rate (kHz) used for clock-correction math. */
 #define TMF8829_TICKS_PER_1000_US 125u
+
+/* Guard: clock-correction division relies on this being non-zero. */
+#ifdef __cplusplus
+static_assert(TMF8829_TICKS_PER_1000_US != 0u, "TMF8829_TICKS_PER_1000_US must be non-zero");
+#else
+_Static_assert(TMF8829_TICKS_PER_1000_US != 0u, "TMF8829_TICKS_PER_1000_US must be non-zero");
+#endif
 /** @} */
 
 /* ------------------------------------------------------------------ */
