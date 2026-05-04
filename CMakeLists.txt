@@ -65,6 +65,11 @@ target_include_directories(tmf8829_universal PUBLIC
   $<INSTALL_INTERFACE:include>
 )
 
+# Internal headers (not installed, not exposed).
+target_include_directories(tmf8829_universal PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 target_compile_features(tmf8829_universal PUBLIC c_std_11)
 
 # Encourage warnings without forcing -Werror on consumers.

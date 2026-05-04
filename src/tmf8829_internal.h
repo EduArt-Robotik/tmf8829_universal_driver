@@ -5,7 +5,7 @@
  * Derived from ams-OSRAM TMF8829 reference drivers (MIT); adapted for portable multi-instance use.
  *
  * Internal helpers shared between translation units of the driver.
- * Not part of the public API; this header is not installed.
+ * Not part of the public API; lives in src/, not installed.
  */
 
 #ifndef TMF8829_INTERNAL_H
@@ -17,7 +17,10 @@
 extern "C" {
 #endif
 
-/** Magic value written to @c drv->_initialised by @ref tmf8829_init. */
+/**
+ * Magic value written to @c drv->_initialised by @ref tmf8829_init.
+ * This is a runtime sanity guard to catch use-before-init, not a security mechanism.
+ */
 #define TMF8829_MAGIC_INITIALISED 0x8829D71Cu
 
 /** True if @p drv has been successfully initialised. */

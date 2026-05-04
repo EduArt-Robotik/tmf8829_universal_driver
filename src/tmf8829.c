@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "tmf8829/tmf8829_internal.h"
+#include "tmf8829_internal.h"
 
 #define TMF8829_SATURATE16(x) ((uint32_t)(x) > 0xFFFFu ? 0xFFFFu : (uint16_t)(x))
 
