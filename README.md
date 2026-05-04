@@ -2,7 +2,11 @@
 
 > A small, portable, multi-instance C11 driver for the **ams-OSRAM TMF8829** direct time-of-flight ranging sensor.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/main/LICENSE) ![Version](https://img.shields.io/badge/version-0.1.0-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/main/LICENSE)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+[![C11](https://img.shields.io/badge/C-11-00599C?logo=c&logoColor=white)](https://en.cppreference.com/w/c/11)
+[![Unit tests](https://img.shields.io/github/actions/workflow/status/EduArt-Robotik/tmf8829_universal_driver/ci.yml?branch=master&label=Unit%20tests)](https://github.com/EduArt-Robotik/tmf8829_universal_driver/actions/workflows/ci.yml?query=branch%3Amaster)
+
 
 ## Why another TMF8829 driver?
 
