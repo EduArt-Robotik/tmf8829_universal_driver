@@ -25,10 +25,11 @@
 extern "C" {
 #endif
 
+#include "tmf8829/tmf8829_version.h"
+
 #include "tmf8829_ops.h"
 #include "tmf8829_regs.h"
 #include "tmf8829_types.h"
-#include "tmf8829/tmf8829_version.h"
 
 /**
  * @brief Microseconds to hold the enable pin low before power-on (cap discharge).
@@ -285,11 +286,13 @@ int tmf8829_power_up(tmf8829_driver_t* drv);
 int tmf8829_wakeup(tmf8829_driver_t* drv);
 
 /**
- * @brief Heuristic wakeup check: reads enable register and CPU-ready bit.
+ * @brief Non-blocking wakeup check: reads enable register and CPU-ready bit.
  *
- * @return @c 1 if CPU ready, @c 0 if not, or negative @ref tmf8829_err_t on bus failure.
+ * @param[out] out_awake  Set to @c 1 if CPU ready, @c 0 if not.
+ *
+ * @return @ref TMF8829_OK, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
-int tmf8829_is_device_wakeup(tmf8829_driver_t* drv);
+int tmf8829_is_device_wakeup(tmf8829_driver_t* drv, uint8_t* out_awake);
 
 /**
  * @brief Read serial number, app version, and chip id registers into @p drv.
@@ -310,9 +313,12 @@ int tmf8829_read_device_info(tmf8829_driver_t* drv);
 /**
  * @brief Issue a raw application command byte and poll @ref TMF8829_REG_CMD_STAT for acceptance.
  *
- * @param[in] cmd  Opcode (e.g. @ref TMF8829_CMD_MEASURE).
+ * @param[in] cmd         Opcode (e.g. @ref TMF8829_CMD_MEASURE).
+ * @param[in] timeout_ms  Maximum time to poll for command acceptance.
+ *
+ * @pre Driver initialised and device in application mode.
  */
-int tmf8829_command(tmf8829_driver_t* drv, uint8_t cmd);
+int tmf8829_command(tmf8829_driver_t* drv, uint8_t cmd, uint16_t timeout_ms);
 
 /** @brief @ref TMF8829_CMD_LOAD_CONFIG_PAGE */
 int tmf8829_cmd_load_config_page(tmf8829_driver_t* drv);
@@ -420,6 +426,20 @@ int tmf8829_clk_correction_set(tmf8829_driver_t* drv, uint8_t enable);
  * @return Unity ratio if @p drv is @c NULL.
  */
 uint16_t tmf8829_clk_correction_ratio_uq15(const tmf8829_driver_t* drv);
+
+/**
+ * @brief Change the device's I2C slave address and update the driver instance.
+ *
+ * Writes @p new_addr to @ref TMF8829_REG_I2C_DEVADDR, then updates
+ * @ref tmf8829_driver_t::i2c_addr so subsequent transfers use the new address.
+ *
+ * @pre Device in application mode; bus type must be @ref TMF8829_BUS_I2C.
+ *
+ * @param[in] new_addr  New 7-bit I2C address (0x00–0x7F).
+ *
+ * @return @ref TMF8829_OK, @ref TMF8829_E_PARAM, or @ref TMF8829_E_BUS.
+ */
+int tmf8829_set_i2c_address(tmf8829_driver_t* drv, uint8_t new_addr);
 
 #ifdef __cplusplus
 }
