@@ -1,0 +1,56 @@
+name: Build and Publish Documentation
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Doxygen 1.15
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget graphviz
+          wget https://www.doxygen.nl/files/doxygen-1.15.0.linux.bin.tar.gz
+          tar -xzf doxygen-1.15.0.linux.bin.tar.gz
+          sudo mv doxygen-1.15.0/bin/doxygen /usr/local/bin/doxygen
+          doxygen --version
+
+      - name: Configure (CMake)
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DTMF8829_BUILD_DOCUMENTATION=ON
+
+      - name: Build documentation
+        run: cmake --build build --target doc
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/doc/html
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

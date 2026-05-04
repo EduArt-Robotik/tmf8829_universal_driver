@@ -234,6 +234,7 @@ int tmf8829_disable(tmf8829_driver_t* drv);
 /**
  * @brief Poll @ref TMF8829_REG_ENABLE until @ref TMF8829_ENABLE_CPU_READY_MASK is set or time elapses.
  *
+ * @param[in,out] drv        Initialised driver instance.
  * @param[in] timeout_ms  Maximum time to poll (milliseconds). Uses @c timeout_ms+1 loop iterations with 1&nbsp;ms delay.
  *
  * @return @ref TMF8829_OK when ready, @ref TMF8829_E_TIMEOUT, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
@@ -243,6 +244,7 @@ int tmf8829_is_cpu_ready(tmf8829_driver_t* drv, uint8_t timeout_ms);
 /**
  * @brief Read @ref TMF8829_REG_INT_STATUS and write-1-to-clear bits in @p mask.
  *
+ * @param[in,out] drv        Initialised driver instance.
  * @param[in]  mask         Bits to consider (typically @ref TMF8829_INT_ALL).
  * @param[out] out_pending  Cleared interrupt bits that were set before the clear (subset of @p mask).
  *
@@ -288,6 +290,7 @@ int tmf8829_wakeup(tmf8829_driver_t* drv);
 /**
  * @brief Non-blocking wakeup check: reads enable register and CPU-ready bit.
  *
+ * @param[in,out] drv       Initialised driver instance.
  * @param[out] out_awake  Set to @c 1 if CPU ready, @c 0 if not.
  *
  * @return @ref TMF8829_OK, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
@@ -313,6 +316,7 @@ int tmf8829_read_device_info(tmf8829_driver_t* drv);
 /**
  * @brief Issue a raw application command byte and poll @ref TMF8829_REG_CMD_STAT for acceptance.
  *
+ * @param[in,out] drv        Initialised driver instance.
  * @param[in] cmd         Opcode (e.g. @ref TMF8829_CMD_MEASURE).
  * @param[in] timeout_ms  Maximum time to poll for command acceptance.
  *
@@ -359,6 +363,7 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t* drv);
  * @pre Bootloader running, @ref tmf8829_driver_t::fw_image_read set, buffer large enough
  * (non-FIFO: @ref TMF8829_BL_WR_HEADER + @ref TMF8829_BL_MAX_PAYLOAD; FIFO: full image chunks).
  *
+ * @param[in,out] drv              Initialised driver instance.
  * @param[in] image_start_addr  Load address; use @ref TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT for vendor image.
  * @param[in] use_fifo          Non-zero for FIFO download path; @c 0 for direct WR_RAM.
  *
@@ -394,7 +399,7 @@ void tmf8829_set_uint16(uint16_t value, uint8_t* data);
 /**
  * @brief Bytes per result pixel for a given @ref TMF8829_REG_CFG_RESULT_FORMAT layout byte.
  *
- * Uses @ref TMF8829_RESULT_FORMAT_* masks in @p layout.
+ * Uses @c TMF8829_RESULT_FORMAT_* masks in @p layout.
  */
 uint8_t tmf8829_get_pixel_size(uint8_t layout);
 
@@ -408,6 +413,7 @@ uint16_t tmf8829_correct_distance(const tmf8829_driver_t* drv, uint16_t distance
 /**
  * @brief Apply @ref tmf8829_correct_distance to each distance field in @ref tmf8829_driver_t::buffer.
  *
+ * @param[in,out] drv     Initialised driver instance.
  * @param[in] size    Number of bytes in buffer to treat as pixels of size @ref tmf8829_get_pixel_size(@p layout).
  * @param[in] layout  Result-format byte (peak count and flags).
  */
@@ -435,6 +441,7 @@ uint16_t tmf8829_clk_correction_ratio_uq15(const tmf8829_driver_t* drv);
  *
  * @pre Device in application mode; bus type must be @ref TMF8829_BUS_I2C.
  *
+ * @param[in,out] drv       Initialised driver instance.
  * @param[in] new_addr  New 7-bit I2C address (0x00–0x7F).
  *
  * @return @ref TMF8829_OK, @ref TMF8829_E_PARAM, or @ref TMF8829_E_BUS.

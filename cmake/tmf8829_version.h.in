@@ -5,12 +5,14 @@
 
 #ifndef TMF8829_VERSION_H
 #define TMF8829_VERSION_H
+// clang-format off
 
 /** Major version of this driver package. */
-#define TMF8829_DRIVER_VERSION_MAJOR @PROJECT_VERSION_MAJOR @
+#define TMF8829_DRIVER_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
 /** Minor version of this driver package. */
-#define TMF8829_DRIVER_VERSION_MINOR @PROJECT_VERSION_MINOR @
+#define TMF8829_DRIVER_VERSION_MINOR @PROJECT_VERSION_MINOR@
 /** Patch level of this driver package. */
-#define TMF8829_DRIVER_VERSION_PATCH @PROJECT_VERSION_PATCH @
+#define TMF8829_DRIVER_VERSION_PATCH @PROJECT_VERSION_PATCH@
 
+// clang-format on
 #endif /* TMF8829_VERSION_H */

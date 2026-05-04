@@ -1,0 +1,65 @@
+# Doxyfile 1.15.0
+#
+# Minimal configuration — only non-default values are listed.
+# Run  doxygen -x doxygen.config  to compare against the template defaults.
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "TMF8829 Universal Driver"
+PROJECT_NUMBER         = @CMAKE_PROJECT_VERSION@
+PROJECT_LOGO           = images/EduArt_logo_small.webp
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = ../include/tmf8829 \
+                         ../README.md
+USE_MDFILE_AS_MAINPAGE = ../README.md
+RECURSIVE              = YES
+IMAGE_PATH             = images
+
+#---------------------------------------------------------------------------
+# Parsing
+#---------------------------------------------------------------------------
+FULL_PATH_NAMES        = NO
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = YES
+EXTRACT_STATIC         = YES
+MARKDOWN_STRICT        = YES
+TOC_INCLUDE_HEADINGS   = 5
+
+#---------------------------------------------------------------------------
+# HTML output
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+TREEVIEW_WIDTH         = 400
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = LIGHT
+HTML_COLORSTYLE_HUE    = 4
+HTML_COLORSTYLE_SAT    = 87
+HTML_COLORSTYLE_GAMMA  = 51
+
+HTML_HEADER            = doxygen/header.html
+HTML_EXTRA_STYLESHEET  = @AWESOME_CSS_DIR@/doxygen-awesome.css \
+                         @AWESOME_CSS_DIR@/doxygen-awesome-sidebar-only.css \
+                         @AWESOME_CSS_DIR@/doxygen-awesome-paragraph-link.js \
+                         @AWESOME_CSS_DIR@/doxygen-awesome-sidebar-only-darkmode-toggle.css \
+                         doxygen/custom.css
+HTML_EXTRA_FILES       = @DOXYGEN_IMAGES_LIST@ \
+                         @AWESOME_CSS_DIR@/doxygen-awesome-tabs.js \
+                         @AWESOME_CSS_DIR@/doxygen-awesome-darkmode-toggle.js
+
+#---------------------------------------------------------------------------
+# LaTeX — disabled
+#---------------------------------------------------------------------------
+GENERATE_LATEX         = NO
+
+#---------------------------------------------------------------------------
+# Dot / Graphviz
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES

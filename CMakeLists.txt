@@ -28,6 +28,11 @@ option(TMF8829_INCLUDE_DEFAULT_IMAGE
   OFF
 )
 
+option(TMF8829_BUILD_DOCUMENTATION
+  "Build Doxygen API documentation (requires Release build type)"
+  OFF
+)
+
 # Auto-enable tests when this project is top-level (i.e. configured directly,
 # not via add_subdirectory). Mirrors the convention used by the sibling
 # edu_sensorring_transport library.
@@ -98,6 +103,14 @@ if(TMF8829_BUILD_TESTS)
   enable_language(CXX)
   enable_testing()
   add_subdirectory(tests)
+endif()
+
+# ----------------------------------------------------------------------------
+# Optional: Doxygen documentation
+# ----------------------------------------------------------------------------
+
+if(TMF8829_BUILD_DOCUMENTATION AND CMAKE_BUILD_TYPE MATCHES Release)
+  add_subdirectory(doc)
 endif()
 
 # ----------------------------------------------------------------------------

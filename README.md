@@ -2,7 +2,7 @@
 
 > A small, portable, multi-instance C11 driver for the **ams-OSRAM TMF8829** direct time-of-flight ranging sensor.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![Version](https://img.shields.io/badge/version-0.1.0-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/main/LICENSE) ![Version](https://img.shields.io/badge/version-0.1.0-blue)
 
 ## Why another TMF8829 driver?
 
@@ -162,7 +162,7 @@ A second sensor on **SPI** in the same firmware is just a second driver instance
 
 ## License & attribution
 
-This project is released under the **MIT License** (see [LICENSE](LICENSE)).
+This project is released under the **MIT License** (see [LICENSE](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/main/LICENSE)).
 
 It is a clean reimplementation, the protocol details (register addresses, command opcodes, bootloader sequence, frame layout) were learned from the ams-OSRAM TMF8829 Arduino and Linux reference drivers, both of which are distributed under the MIT license.
 The `LICENSE` file contains the acknowledgment.
