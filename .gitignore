@@ -18,7 +18,6 @@ _deps/
 # Doxygen (if generated locally)
 html/
 latex/
-doxygen/
 
 # Artifacts
 *.o

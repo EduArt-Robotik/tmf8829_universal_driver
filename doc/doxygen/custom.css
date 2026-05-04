@@ -1,0 +1,66 @@
+html {
+    --content-maxwidth: 1000px;
+    --side-nav-fixed-width: 400px;
+    --content-line-height: 32px;
+}
+
+html.dark-mode {
+    /* primary theme color. This will affect the entire websites color scheme: links, arrows, labels, ... */
+    --primary-color: #811811;
+    --primary-dark-color: #811811;
+    --primary-light-color: #811811;
+}
+
+html.light-mode {
+    /* primary theme color. This will affect the entire websites color scheme: links, arrows, labels, ... */
+    --primary-color: #811811;
+    --primary-dark-color: #811811;
+    --primary-light-color: #811811;
+}
+
+/* GitHub corner */
+.github-corner svg {
+    fill: var(--primary-light-color);
+    color: var(--page-background-color);
+    width: 72px;
+    height: 72px;
+}
+
+/* GitHub corner */
+@media screen and (max-width: 767px) {
+    .github-corner svg {
+        width: 50px;
+        height: 50px;
+    }
+
+    #projectnumber {
+        margin-right: 22px;
+    }
+}
+
+.content-wrapper {
+    padding: 100px;
+}
+
+.doc-content {
+    padding: 100px 120px;
+}
+
+/* Space above and below blockquote elements */
+.doxtable {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Justified text formatting */
+.markdown p {
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+/* Justified text formatting */
+.contents p,
+.textblock p {
+    text-align: justify;
+    text-justify: inter-word;
+}
