@@ -191,6 +191,7 @@ struct tmf8829_driver {
   /** Chip id / revision bytes from @ref TMF8829_REG_CID_RID. */
   uint8_t chip_version[2];
 
+  /* --- Internal state (do not access directly; layout may change) --- */
   uint16_t _clk_corr_ratio_uq;                          /**< Internal: UQ15 clock ratio vs nominal. */
   uint8_t _clk_corr_enable;                             /**< Internal: non-zero if pairs are collected. */
   uint8_t _clk_corr_idx;                                /**< Internal: ring index for correction pairs. */
@@ -325,12 +326,20 @@ int tmf8829_get_configuration(tmf8829_driver_t* drv);
 
 /**
  * @brief Write @ref tmf8829_driver_t::config to the device (load page + write page sequence).
+ *
+ * @pre The config page must have been loaded first via @ref tmf8829_get_configuration or
+ *      manually populated from a known-good state. The device must be in application mode
+ *      with no measurement active.
  */
 int tmf8829_set_configuration(tmf8829_driver_t* drv);
 
-/** @brief @ref TMF8829_CMD_MEASURE */
+/** @brief @ref TMF8829_CMD_MEASURE
+ *  @pre Configuration written, device in application mode, no measurement active.
+ */
 int tmf8829_start_measurement(tmf8829_driver_t* drv);
-/** @brief @ref TMF8829_CMD_STOP */
+/** @brief @ref TMF8829_CMD_STOP
+ *  @pre Measurement active; wakes device if in standby.
+ */
 int tmf8829_stop_measurement(tmf8829_driver_t* drv);
 
 /** @brief Bootloader: @ref TMF8829_BL_CMD_STAT_SPI_OFF */
@@ -341,7 +350,7 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t* drv);
 /**
  * @brief Stream firmware through @ref tmf8829_driver_t::fw_image_read and start the RAM application.
  *
- * Prerequisites: bootloader running, @ref tmf8829_driver_t::fw_image_read set, buffer large enough
+ * @pre Bootloader running, @ref tmf8829_driver_t::fw_image_read set, buffer large enough
  * (non-FIFO: @ref TMF8829_BL_WR_HEADER + @ref TMF8829_BL_MAX_PAYLOAD; FIFO: full image chunks).
  *
  * @param[in] image_start_addr  Load address; use @ref TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT for vendor image.

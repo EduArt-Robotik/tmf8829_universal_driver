@@ -31,8 +31,9 @@ extern "C" {
  * @note For SPI, the TMF8829 protocol returns one stuff/dummy byte after the
  * read command and register address. This library expects @p buf to contain
  * only the requested payload bytes, so platform @ref tmf8829_read_fn
- * implementations must consume/discard that first byte. Refer to datasheet
- * section 7.11.2 "SPI read transaction" for more details.
+ * implementations must consume/discard that first byte. If the platform does
+ * not strip it, all register reads will be shifted by one byte (garbage data).
+ * Refer to datasheet section 7.11.2 "SPI read transaction" for more details.
  *
  * @param[in]  reg  First register address on the device.
  * @param[out] buf  Destination buffer.
