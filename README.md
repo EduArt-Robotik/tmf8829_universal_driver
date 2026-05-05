@@ -170,7 +170,7 @@ A second sensor on **SPI** in the same firmware is just a second driver instance
 
 ## License & attribution
 
-This project is released under the **MIT License** (see [LICENSE](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/main/LICENSE)).
+This project is released under the **MIT License** (see [LICENSE](https://github.com/EduArt-Robotik/tmf8829_universal_driver/blob/master/LICENSE)).
 
 It is a clean reimplementation, the protocol details (register addresses, command opcodes, bootloader sequence, frame layout) were learned from the ams-OSRAM TMF8829 Arduino and Linux reference drivers, both of which are distributed under the MIT license.
 The `LICENSE` file contains the acknowledgment.
