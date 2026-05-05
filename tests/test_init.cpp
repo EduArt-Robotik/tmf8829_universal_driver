@@ -4,7 +4,7 @@
  * Copyright (c) 2026 tmf8829_universal_driver contributors
  * Derived from ams-OSRAM TMF8829 reference drivers (MIT); adapted for portable multi-instance use.
  *
- * Smoke test: confirms the public headers parse, the static library links,
+ * Init tests: confirms the public headers parse, the static library links,
  * basic types are visible, and tmf8829_init enforces the parameter contract.
  *
  * Behavioural tests for enable / IRQ / measurement are in dedicated
@@ -63,7 +63,7 @@ struct BufferedDriver {
 
 } /* namespace */
 
-TEST_CASE("error code conventions", "[tmf8829][smoke]") {
+TEST_CASE("error code conventions", "[tmf8829][init]") {
   REQUIRE(TMF8829_OK == 0);
   REQUIRE(TMF8829_E_PARAM < 0);
   REQUIRE(TMF8829_E_BUS < 0);
@@ -74,14 +74,14 @@ TEST_CASE("error code conventions", "[tmf8829][smoke]") {
   REQUIRE(TMF8829_E_NOT_IMPLEMENTED < 0);
 }
 
-TEST_CASE("public types have non-zero size", "[tmf8829][smoke]") {
+TEST_CASE("public types have non-zero size", "[tmf8829][init]") {
   STATIC_REQUIRE(sizeof(tmf8829_driver_t) > 0);
   STATIC_REQUIRE(sizeof(tmf8829_ops_t) > 0);
   STATIC_REQUIRE(sizeof(tmf8829_bus_t) > 0);
   STATIC_REQUIRE(sizeof(tmf8829_err_t) > 0);
 }
 
-TEST_CASE("driver version matches release package", "[tmf8829][smoke]") {
+TEST_CASE("driver version matches release package", "[tmf8829][init]") {
   REQUIRE(TMF8829_DRIVER_VERSION_MAJOR == 0);
   REQUIRE(TMF8829_DRIVER_VERSION_MINOR == 1);
   REQUIRE(TMF8829_DRIVER_VERSION_PATCH == 0);

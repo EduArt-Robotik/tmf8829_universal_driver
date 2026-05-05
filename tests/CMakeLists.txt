@@ -19,7 +19,7 @@ include(CTest)
 include(Catch)
 
 set(tmf8829_test_sources
-  test_smoke.cpp
+  test_init.cpp
   test_enable.cpp
   test_interrupts.cpp
   test_utilities.cpp
