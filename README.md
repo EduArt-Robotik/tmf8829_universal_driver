@@ -41,27 +41,29 @@ This project keeps the proven **register-level protocol logic** of the ams-OSRAM
 
 ```text
 tmf8829_universal_driver/
-├── .github/workflows/ci.yml
-├── cmake/tmf8829_universal_driverConfig.cmake.in
-├── CMakeLists.txt          # core target + options + install/export package files
-├── LICENSE                 # MIT
+├── cmake/
+│   ├── tmf8829_universal_driverConfig.cmake.in
+│   └── tmf8829_version.h.in
 ├── include/tmf8829/
-│   ├── tmf8829.h           # init, enable, measurement API
-│   ├── tmf8829_internal.h  # init magic + inline guards (not for app use)
-│   ├── tmf8829_types.h     # tmf8829_bus_t, tmf8829_err_t, log levels, forward decls
-│   ├── tmf8829_ops.h       # tmf8829_ops_t platform callback table
-│   └── tmf8829_regs.h      # register addresses, command opcodes, frame layout
+│   ├── tmf8829.h                     # init, enable, measurement API
+│   ├── tmf8829_types.h               # tmf8829_bus_t, tmf8829_err_t, log levels, forward decls
+│   ├── tmf8829_ops.h                 # tmf8829_ops_t platform callback table
+│   └── tmf8829_regs.h                # register addresses, command opcodes, frame layout
 ├── src/
-│   └── tmf8829.c           # protocol implementation
-├── image/                  # opt-in vendor firmware (not built by default)
+│   ├── tmf8829.c                     # protocol implementation
+│   └── tmf8829_internal.h            # init magic + inline guards (not for app use)
+├── image/                            # opt-in vendor firmware (not built by default)
 │   ├── CMakeLists.txt
-│   ├── tmf8829_fw_image.c / .h       # vendored ams-OSRAM app binary
-│   ├── tmf8829_fw_source.h
-│   └── tmf8829_fw_source.c           # fw_image_read adapter -> fw_image blob
-└── tests/
-    ├── CMakeLists.txt
-    ├── test_*.cpp          # Catch2 v3 test units
-    └── support/            # fakes and shared fixture helpers
+│   ├── tmf8829_fw_image.h            # vendored ams-OSRAM app binary
+│   ├── tmf8829_fw_image.c            # app image binary blob
+│   ├── tmf8829_fw_source.h           # fw_image_read adapter
+│   └── tmf8829_fw_source.c
+├── tests/
+│   ├── CMakeLists.txt
+│   └── test_*.cpp
+├── CMakeLists.txt                    # core target + options + install/export package files
+├── CMakePresets.json                 # dev/CI build presets
+└── LICENSE                           # MIT
 ```
 
 ## Requirements
@@ -128,6 +130,7 @@ target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829)
 |---|---|---|
 | `TMF8829_BUILD_TESTS` | `OFF` (auto-`ON` standalone) | Build Catch2 unit tests. Pulls Catch2 v3 via `FetchContent`. **Disable on embedded targets.** |
 | `TMF8829_INCLUDE_DEFAULT_IMAGE` | `OFF` | Build the bundled vendor firmware image as `tmf8829::default_image`. |
+| `TMF8829_BUILD_DOCUMENTATION` | `OFF` | Build Doxygen API documentation (requires `Release` build type). |
 
 ## Usage sketch
 
@@ -162,6 +165,7 @@ A second sensor on **SPI** in the same firmware is just a second driver instance
 - Public C API in `include/tmf8829/` for init, power/enable, command/config, bootloader firmware download, and result/histogram reads.
 - Optional default firmware image packaged as `tmf8829::default_image` (`image/tmf8829_fw_image.*` + `image/tmf8829_fw_source.*`).
 - Catch2 unit tests under `tests/` with fakes for bus, time, and pin behavior.
+- Doxygen API documentation under `doc/`, deployable to GitHub Pages.
 - CI workflow in `.github/workflows/ci.yml` building and testing matrix targets.
 
 ## License & attribution
