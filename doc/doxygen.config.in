@@ -15,7 +15,8 @@ OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@
 # Input
 #---------------------------------------------------------------------------
 INPUT                  = ../include/tmf8829 \
-                         ../README.md
+                         ../README.md \
+                         pages
 USE_MDFILE_AS_MAINPAGE = ../README.md
 RECURSIVE              = YES
 IMAGE_PATH             = images

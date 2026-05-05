@@ -176,3 +176,11 @@ It is a clean reimplementation, the protocol details (register addresses, comman
 The `LICENSE` file contains the acknowledgment.
 
 The optional default firmware image under `image/` is derived from the ams-OSRAM Arduino `tmf8829_image.c` (MIT) and redistributed under the same terms.
+
+<div class="section_buttons">
+
+| | Read Next |
+|:--|--:|
+| | [Integration Guide](doc/pages/01_integration_guide.md) |
+
+</div>
