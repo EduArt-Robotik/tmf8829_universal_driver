@@ -64,6 +64,11 @@ typedef uint32_t (*tmf8829_systick_us_fn)(void);
  * @brief Drive the sensor enable pin: low if @p high is zero, else high.
  *
  * Pin mux / mode must be configured before @ref tmf8829_init.
+ *
+ * May be @c NULL if the enable pin is permanently tied high in hardware
+ * (not controllable via GPIO). When @c NULL, @ref tmf8829_enable skips
+ * the power-on toggle and only polls for CPU readiness, and
+ * @ref tmf8829_disable becomes a no-op returning @ref TMF8829_E_NOT_IMPLEMENTED.
  */
 typedef void (*tmf8829_write_pin_enable_fn)(tmf8829_driver_t* drv, int high);
 
@@ -87,7 +92,7 @@ struct tmf8829_ops {
   tmf8829_write_fn write;                       /**< Required: register write. */
   tmf8829_delay_us_fn delay_us;                 /**< Required: microsecond delay. */
   tmf8829_systick_us_fn systick_us;             /**< Required: microsecond time base. */
-  tmf8829_write_pin_enable_fn write_pin_enable; /**< Required: enable power pin. */
+  tmf8829_write_pin_enable_fn write_pin_enable; /**< Optional: enable power pin; may be @c NULL if pin is permanently high. */
   tmf8829_read_pin_int_fn read_pin_int;         /**< Optional: IRQ pin; may be @c NULL. */
 };
 

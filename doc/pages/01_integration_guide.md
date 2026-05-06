@@ -37,7 +37,7 @@ In your source file:
 
 ## Step 2: Implement the Callback Table
 
-You must provide five required callbacks and one optional callback in a `tmf8829_ops_t` struct.
+You must provide four required callbacks and one or two optional callbacks in a `tmf8829_ops_t` struct.
 
 ### Required Callbacks
 
@@ -47,12 +47,12 @@ You must provide five required callbacks and one optional callback in a `tmf8829
 | `write` | `int (tmf8829_driver_t* drv, uint8_t reg, const uint8_t* buf, uint16_t len)` | Write `len` bytes from `buf` starting at register `reg`. |
 | `delay_us` | `void (uint32_t us)` | Busy-wait for at least `us` microseconds. |
 | `systick_us` | `uint32_t (void)` | Return a free-running microsecond counter (32-bit wrap is fine). |
-| `write_pin_enable` | `void (tmf8829_driver_t* drv, int high)` | Drive the sensor enable/power pin high or low. |
 
-### Optional Callback
+### Optional Callbacks
 
 | Callback | Signature | Purpose |
 |----------|-----------|---------|
+| `write_pin_enable` | `void (tmf8829_driver_t* drv, int high)` | Drive the sensor enable/power pin high or low. Set to `NULL` if the enable pin is not controllable (permanently high, e.g. hard wired on the PCB). |
 | `read_pin_int` | `int (tmf8829_driver_t* drv)` | Read the interrupt GPIO level. Return 1 if asserted, 0 if not. Set to `NULL` if you poll `TMF8829_REG_INT_STATUS` instead. |
 
 All callbacks return `0` on success and a negative value on failure (matching the driver's own convention).

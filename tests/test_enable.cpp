@@ -143,3 +143,11 @@ TEST_CASE("is_cpu_ready returns BUS error when read fails", "[tmf8829][cpu_ready
   REQUIRE(tmf8829_is_cpu_ready(&f.drv, 10) == TMF8829_E_BUS);
   REQUIRE(f.bus.ops.size() == 1);
 }
+
+TEST_CASE("disable returns NOT_IMPLEMENTED if write_pin_enable is NULL", "[tmf8829][enable][optional]") {
+  Fixture f;
+  f.ops.write_pin_enable = NULL;
+  REQUIRE(f.init() == TMF8829_OK);
+  REQUIRE(tmf8829_disable(&f.drv) == TMF8829_E_NOT_IMPLEMENTED);
+  REQUIRE(f.pin.enable_history.empty());
+}

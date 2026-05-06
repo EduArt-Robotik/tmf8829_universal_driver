@@ -222,12 +222,20 @@ int tmf8829_set_log_level(tmf8829_driver_t* drv, uint8_t level);
 /**
  * @brief Power sequence: enable pin low (discharge), high, then wait for CPU ready.
  *
+ * If @ref tmf8829_ops_t::write_pin_enable is @c NULL (enable pin permanently
+ * tied high), the pin toggle and discharge delays are skipped and the function
+ * only polls for CPU readiness.
+ *
  * @return @ref TMF8829_OK, @ref TMF8829_E_TIMEOUT, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
 int tmf8829_enable(tmf8829_driver_t* drv);
 
 /**
  * @brief Drive the enable pin low (sensor off).
+ *
+ * If @ref tmf8829_ops_t::write_pin_enable is @c NULL (enable pin permanently
+ * tied high), returns @ref TMF8829_E_NOT_IMPLEMENTED since the sensor cannot
+ * be powered down via software.
  */
 int tmf8829_disable(tmf8829_driver_t* drv);
 

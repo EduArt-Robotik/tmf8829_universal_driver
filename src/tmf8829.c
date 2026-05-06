@@ -142,7 +142,7 @@ static int validate_ops(const tmf8829_ops_t* ops) {
   if (ops == NULL) {
     return TMF8829_E_PARAM;
   }
-  if (ops->read == NULL || ops->write == NULL || ops->delay_us == NULL || ops->systick_us == NULL || ops->write_pin_enable == NULL) {
+  if (ops->read == NULL || ops->write == NULL || ops->delay_us == NULL || ops->systick_us == NULL) {
     return TMF8829_E_PARAM;
   }
   return TMF8829_OK;
@@ -200,16 +200,21 @@ int tmf8829_enable(tmf8829_driver_t* drv) {
     return TMF8829_E_PARAM;
   }
 
-  drv->ops->write_pin_enable(drv, 0);
-  drv->ops->delay_us(TMF8829_ENABLE_CAP_DISCHARGE_US);
-  drv->ops->write_pin_enable(drv, 1);
-  drv->ops->delay_us(TMF8829_ENABLE_RAMP_US);
+  if (drv->ops->write_pin_enable != NULL) {
+    drv->ops->write_pin_enable(drv, 0);
+    drv->ops->delay_us(TMF8829_ENABLE_CAP_DISCHARGE_US);
+    drv->ops->write_pin_enable(drv, 1);
+    drv->ops->delay_us(TMF8829_ENABLE_RAMP_US);
+  }
   return tmf8829_is_cpu_ready(drv, TMF8829_CPU_READY_TIMEOUT_MS);
 }
 
 int tmf8829_disable(tmf8829_driver_t* drv) {
   if (!tmf8829_internal_is_initialised(drv)) {
     return TMF8829_E_PARAM;
+  }
+  if (drv->ops->write_pin_enable == NULL) {
+    return TMF8829_E_NOT_IMPLEMENTED;
   }
   drv->ops->write_pin_enable(drv, 0);
   return TMF8829_OK;
