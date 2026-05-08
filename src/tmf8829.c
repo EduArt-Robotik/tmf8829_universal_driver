@@ -204,8 +204,9 @@ int tmf8829_enable(tmf8829_driver_t* drv) {
     drv->ops->write_pin_enable(drv, 0);
     drv->ops->delay_us(TMF8829_ENABLE_CAP_DISCHARGE_US);
     drv->ops->write_pin_enable(drv, 1);
-    drv->ops->delay_us(TMF8829_ENABLE_RAMP_US);
   }
+
+  drv->ops->delay_us(TMF8829_ENABLE_RAMP_US);
   return tmf8829_is_cpu_ready(drv, TMF8829_CPU_READY_TIMEOUT_MS);
 }
 
