@@ -328,8 +328,8 @@ static tmf8829_driver_t sensor_b = {
 
 <div class="section_buttons">
 
-| Read Previous | |
+| Read Previous | Read Next |
 |:--|--:|
-| [Readme](../../README.md) | |
+| [Readme](../../README.md) | [Getting Data Out of the Driver](02_getting_data.md) |
 
 </div>
