@@ -22,7 +22,7 @@ They are functional and well-commented, but their shared "shim" architecture has
 - **Application policy in the driver**: CSV printing, frame post-processing, and console input are part of the "shim" interface.
 - **Buffer sizing escapes the platform layer**: `DATA_BUFFER_SIZE` is set in the shim header and used to size a member of the core driver struct, so the driver layout depends on the platform port.
 
-This project keeps the proven **register-level protocol logic** of the ams-OSRAM drivers but wraps it in a tighter abstraction:
+This project keeps the **register-level protocol logic** of the ams-OSRAM drivers but wraps it in a tighter abstraction:
 
 - One `tmf8829_driver_t` instance per sensor.
 - Bus type (I2C or SPI) is a runtime field on the driver struct.
