@@ -21,16 +21,14 @@ TEST_CASE("enable runs the canonical bring-up sequence", "[tmf8829][enable]") {
 
   REQUIRE(tmf8829_enable(&f.drv) == TMF8829_OK);
 
-  // Pin: drive low, then high (in that order).
-  REQUIRE(f.pin.enable_history.size() == 2);
-  REQUIRE(f.pin.enable_history[0] == 0);
-  REQUIRE(f.pin.enable_history[1] == 1);
+  // Pin: drive high once.
+  REQUIRE(f.pin.enable_history.size() == 1);
+  REQUIRE(f.pin.enable_history[0] == 1);
 
-  // Delays: cap-discharge then ramp. The CPU-ready poll succeeded on the
+  // Delays: ramp only. The CPU-ready poll succeeded on the
   // very first read so no additional 1 ms delays were issued.
-  REQUIRE(f.clock.delays.size() == 2);
-  REQUIRE(f.clock.delays[0] == TMF8829_ENABLE_CAP_DISCHARGE_US);
-  REQUIRE(f.clock.delays[1] == TMF8829_ENABLE_RAMP_US);
+  REQUIRE(f.clock.delays.size() == 1);
+  REQUIRE(f.clock.delays[0] == TMF8829_ENABLE_RAMP_US);
 
   // Exactly one bus operation: a 1-byte read of the ENABLE register.
   REQUIRE(f.bus.ops.size() == 1);
@@ -48,9 +46,8 @@ TEST_CASE("enable returns timeout if CPU never asserts ready", "[tmf8829][enable
   REQUIRE(tmf8829_enable(&f.drv) == TMF8829_E_TIMEOUT);
 
   // Pin sequence still ran to completion.
-  REQUIRE(f.pin.enable_history.size() == 2);
-  REQUIRE(f.pin.enable_history[0] == 0);
-  REQUIRE(f.pin.enable_history[1] == 1);
+  REQUIRE(f.pin.enable_history.size() == 1);
+  REQUIRE(f.pin.enable_history[0] == 1);
 
   // Polling did 1 + TMF8829_CPU_READY_TIMEOUT_MS reads of the ENABLE
   // register, with TMF8829_CPU_READY_TIMEOUT_MS 1 ms-delays between them.
@@ -61,11 +58,12 @@ TEST_CASE("enable returns timeout if CPU never asserts ready", "[tmf8829][enable
     REQUIRE(op.reg == TMF8829_REG_ENABLE);
   }
 
-  // Cap-discharge + ramp + (timeout_ms) inter-poll delays.
-  const std::size_t expected_delays = 2 + TMF8829_CPU_READY_TIMEOUT_MS;
+  // Ramp + (timeout_ms) inter-poll delays.
+  const std::size_t expected_delays = 1 + TMF8829_CPU_READY_TIMEOUT_MS;
   REQUIRE(f.clock.delays.size() == expected_delays);
-  // Last `timeout_ms` delays are the 1 ms sleeps inside is_cpu_ready.
-  for (std::size_t i = 2; i < expected_delays; ++i) {
+  REQUIRE(f.clock.delays[0] == TMF8829_ENABLE_RAMP_US);
+  // Remaining delays are the 1 ms sleeps inside is_cpu_ready.
+  for (std::size_t i = 1; i < expected_delays; ++i) {
     REQUIRE(f.clock.delays[i] == 1000u);
   }
 }
@@ -109,7 +107,7 @@ TEST_CASE("enable works identically with bus = SPI", "[tmf8829][enable][bus]") {
 
   REQUIRE(f.bus.ops.size() == 1);
   REQUIRE(f.bus.ops[0].reg == TMF8829_REG_ENABLE);
-  REQUIRE(f.pin.enable_history == std::vector<int>{ 0, 1 });
+  REQUIRE(f.pin.enable_history == std::vector<int>{ 1 });
 }
 
 TEST_CASE("is_cpu_ready returns OK as soon as the bit is set", "[tmf8829][cpu_ready]") {

@@ -220,11 +220,14 @@ int tmf8829_init(tmf8829_driver_t* drv, const tmf8829_ops_t* ops);
 int tmf8829_set_log_level(tmf8829_driver_t* drv, uint8_t level);
 
 /**
- * @brief Power sequence: enable pin low (discharge), high, then wait for CPU ready.
+ * @brief Drive the enable pin high and wait for CPU ready.
  *
  * If @ref tmf8829_ops_t::write_pin_enable is @c NULL (enable pin permanently
  * tied high), the pin toggle and discharge delays are skipped and the function
  * only polls for CPU readiness.
+ *
+ * To do a power cycle, call @ref tmf8829_disable followed by @ref tmf8829_enable
+ * followed by choosing a communication interface.
  *
  * @return @ref TMF8829_OK, @ref TMF8829_E_TIMEOUT, @ref TMF8829_E_BUS, or @ref TMF8829_E_PARAM.
  */
