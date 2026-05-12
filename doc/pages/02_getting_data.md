@@ -111,11 +111,21 @@ static tmf8829_driver_t sensor = {
 };
 ```
 
-### 4. Initialise, Enable, and Download Firmware
+### 4. Initialise, Enable, Select Interface, and Download Firmware
+
+@warning After every power cycle you **must** call the bootloader interface-selection command before any other communication.
+Omitting this step causes all subsequent calls to silently fail.
 
 ```c
 tmf8829_init(&sensor, &my_ops);
 tmf8829_enable(&sensor);
+
+/* Tell the bootloader which bus to use.  Call the opposite of your active bus:
+ *   SPI active → disable I2C:  tmf8829_bootloader_i2c_off()
+ *   I2C active → disable SPI:  tmf8829_bootloader_spi_off()
+ * If the application firmware is already running the call returns an error — safe to ignore. */
+tmf8829_bootloader_i2c_off(&sensor); /* example: using SPI */
+
 tmf8829_download_firmware(&sensor, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, /*use_fifo=*/ false);
 ```
 

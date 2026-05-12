@@ -105,7 +105,33 @@ if (rc != TMF8829_OK) { /* handle error */ }
 
 `tmf8829_enable()` performs the power-on sequence: drives enable low (capacitor discharge), then high, and polls until the CPU reports ready.
 
-## Step 5: Download Firmware
+## Step 5: Select the Active Bus Interface
+
+@warning This step is **mandatory** after every power cycle and is easy to miss.
+Skipping it will cause all subsequent communication to silently fail and the sensor remains unresponsive.
+
+After or power-on the bootloader starts with both the I2C and SPI interfaces active simultaneously.
+You must disable the interface you are **not** using before any other command.
+This tells the bootloader which interface to route traffic through for the remainder of the session.
+
+**For SPI** (disable I2C):
+
+```c
+rc = tmf8829_bootloader_i2c_off(&sensor);
+if (rc != TMF8829_OK) { /* handle error */ }
+```
+
+**For I2C** (disable SPI):
+
+```c
+rc = tmf8829_bootloader_spi_off(&sensor);
+if (rc != TMF8829_OK) { /* handle error */ }
+```
+
+This command only works while the bootloader is running (i.e. before `tmf8829_download_firmware` is called).
+If the application firmware is already running from a previous session, the call will return an error, which is safe to ignore.
+
+## Step 6: Download Firmware
 
 The tmf8829 main firmware is stored in the sensors RAM memory.
 The RAM is volatile and looses its content when the sensor is powered down.
@@ -121,7 +147,7 @@ rc = tmf8829_download_firmware(&sensor, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, fals
 
 Or supply your own `tmf8829_fw_image_read_fn` to read from external flash, a filesystem, etc.
 
-## Step 6: Configure and Measure
+## Step 7: Configure and Measure
 
 ```c
 /* Load a configuration preset */
@@ -322,6 +348,7 @@ static tmf8829_driver_t sensor_b = {
 |---------|--------------|
 | `tmf8829_init` returns `TMF8829_E_PARAM` | Missing required callback, buffer too small, or invalid I2C address (> 0x7F). |
 | `tmf8829_enable` returns `TMF8829_E_TIMEOUT` | Enable pin not wired, wrong GPIO port/pin, or sensor not powered. |
+| Firmware download times out or all calls fail after power cycle | **Interface not selected.** `tmf8829_bootloader_i2c_off()` (SPI) or `tmf8829_bootloader_spi_off()` (I2C) was not called before the firmware download. See Step 5. |
 | Garbage data from reads | SPI: stuff byte not discarded. I2C: address not left-shifted. |
 | Firmware download fails | Buffer too small for chunk size, or `fw_image_read` returns short reads. |
 | Clock correction drift | `systick_us` wraps too fast or has low resolution. Ensure monotonic microsecond accuracy. |
