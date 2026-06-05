@@ -1,4 +1,4 @@
-# tmf8829_universal_driver
+# TMF8829 Universal Driver
 
 > A small, portable, multi-instance C11 driver for the **ams-OSRAM TMF8829** direct time-of-flight ranging sensor.
 
