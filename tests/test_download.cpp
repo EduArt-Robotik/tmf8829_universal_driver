@@ -77,6 +77,65 @@ void setup_bootloader_ready(Fixture& f) {
   f.bus.non_incrementing[TMF8829_REG_FIFO] = true;
 }
 
+std::vector<std::uint8_t> ram_response(const std::uint8_t* data, std::uint8_t len) {
+  std::vector<std::uint8_t> response{ TMF8829_BL_STAT_READY, len };
+  response.insert(response.end(), data, data + len);
+  return response;
+}
+
+void queue_write_status(Fixture& f) {
+  f.bus.non_incrementing[TMF8829_REG_CMD_STAT] = true;
+  f.bus.fifo_push(TMF8829_REG_CMD_STAT, { TMF8829_BL_STAT_READY, TMF8829_BL_STAT_READY });
+}
+
+void queue_readback(Fixture& f, const std::vector<std::uint8_t>& response) {
+  // Address-command status, read-command status, then the full readback response.
+  f.bus.fifo_push(TMF8829_REG_CMD_STAT, { TMF8829_BL_STAT_READY, TMF8829_BL_STAT_READY });
+  f.bus.fifo_push(TMF8829_REG_CMD_STAT, response.data(), response.size());
+}
+
+void queue_ram_download(Fixture& f, const std::uint8_t* image, std::uint32_t size, std::uint8_t chunk_limit = 128u) {
+  for (std::uint32_t offset = 0; offset < size;) {
+    const auto len = static_cast<std::uint8_t>((size - offset < chunk_limit) ? size - offset : chunk_limit);
+    queue_write_status(f);
+    const auto response = ram_response(image + offset, len);
+    queue_readback(f, response);
+    queue_readback(f, response);
+    offset += len;
+  }
+}
+
+void require_no_app_start(const Fixture& f) {
+  for (const auto& op : f.bus.ops) {
+    if (op.kind == FakeBus::OpKind::Write && op.reg == TMF8829_REG_CMD_STAT) {
+      REQUIRE(op.data[0] != TMF8829_BL_CMD_STAT_START_RAM_APP);
+    }
+    REQUIRE_FALSE((op.kind == FakeBus::OpKind::Write && op.reg == TMF8829_REG_ENABLE));
+  }
+}
+
+const auto kLargeImage = [] {
+  std::array<std::uint8_t, 273> image{};
+  for (std::size_t i = 0; i < image.size(); ++i) {
+    image[i] = static_cast<std::uint8_t>(i);
+  }
+  return image;
+}();
+
+int large_fw_read(tmf8829_driver_t*, std::uint32_t offset, std::uint8_t* buf, std::uint32_t len, std::uint32_t* total) {
+  if (total != nullptr) {
+    *total = static_cast<std::uint32_t>(kLargeImage.size());
+  }
+  if (buf == nullptr && len == 0u) {
+    return 0;
+  }
+  if (buf == nullptr || offset > kLargeImage.size() || len > kLargeImage.size() - offset) {
+    return TMF8829_E_PARAM;
+  }
+  std::memcpy(buf, kLargeImage.data() + offset, len);
+  return static_cast<int>(len);
+}
+
 } // namespace
 
 TEST_CASE("download_firmware rejects uninitialised driver", "[tmf8829][download]") {
@@ -99,10 +158,11 @@ TEST_CASE("download_firmware propagates fw_image_read probe failure", "[tmf8829]
 }
 
 TEST_CASE("download_firmware WR_RAM: happy path", "[tmf8829][download]") {
-  Fixture f;
+  Fixture f(GENERATE(TMF8829_BUS_I2C, TMF8829_BUS_SPI));
   REQUIRE(f.init() == TMF8829_OK);
   setup_bootloader_ready(f);
   f.drv.fw_image_read = fake_fw_read;
+  queue_ram_download(f, kFakeImage, kFakeImageSize);
 
   // After download completes, bl_start_ram_app polls APP_ID for APPLICATION.
   f.bus.preload(TMF8829_REG_APP_ID, TMF8829_APP_ID__APPLICATION);
@@ -111,6 +171,7 @@ TEST_CASE("download_firmware WR_RAM: happy path", "[tmf8829][download]") {
 
   int rc = tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0);
   REQUIRE(rc == TMF8829_OK);
+  REQUIRE(f.bus.fifo_read_queue[TMF8829_REG_CMD_STAT].empty());
 }
 
 TEST_CASE("download_firmware FIFO: happy path", "[tmf8829][download]") {
@@ -124,6 +185,11 @@ TEST_CASE("download_firmware FIFO: happy path", "[tmf8829][download]") {
 
   int rc = tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 1);
   REQUIRE(rc == TMF8829_OK);
+  for (const auto& op : f.bus.ops) {
+    if (op.kind == FakeBus::OpKind::Write && op.reg == TMF8829_REG_CMD_STAT) {
+      REQUIRE(op.data[0] != TMF8829_BL_CMD_STAT_R_RAM);
+    }
+  }
 }
 
 TEST_CASE("download_firmware WR_RAM: short read yields E_BOOTLOADER", "[tmf8829][download]") {
@@ -152,11 +218,173 @@ TEST_CASE("download_firmware WR_RAM: bus write failure mid-download", "[tmf8829]
   setup_bootloader_ready(f);
   f.drv.fw_image_read = fake_fw_read;
 
-  // Let the first few writes succeed (address set), then fail during data.
-  f.bus.write_error_after_n = 3;
+  f.bus.write_error_after_n = 1;
 
   int rc = tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0);
-  REQUIRE(rc < 0);
+  REQUIRE(rc == TMF8829_E_BUS);
+  require_no_app_start(f);
+}
+
+TEST_CASE("download_firmware WR_RAM: restores addresses and verifies every chunk on both CPUs", "[tmf8829][download]") {
+  Fixture f(GENERATE(TMF8829_BUS_I2C, TMF8829_BUS_SPI));
+  REQUIRE(f.init() == TMF8829_OK);
+  setup_bootloader_ready(f);
+  f.drv.fw_image_read            = large_fw_read;
+  const auto max_write           = GENERATE(0u, 18u, 6u);
+  f.drv.max_write_len            = static_cast<std::uint16_t>(max_write);
+  const std::uint8_t chunk_limit = (max_write == 0u) ? 128u : static_cast<std::uint8_t>(max_write - 2u);
+  queue_ram_download(f, kLargeImage.data(), static_cast<std::uint32_t>(kLargeImage.size()), chunk_limit);
+  f.bus.preload(TMF8829_REG_APP_ID, TMF8829_APP_ID__APPLICATION);
+
+  const std::uint32_t start = TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT + 0x100u;
+  REQUIRE(tmf8829_download_firmware(&f.drv, start, 0) == TMF8829_OK);
+  std::vector<FakeBus::Op> writes;
+  for (const auto& op : f.bus.ops) {
+    if (op.kind == FakeBus::OpKind::Write && op.reg == TMF8829_REG_CMD_STAT) {
+      writes.push_back(op);
+      if (max_write != 0u) {
+        REQUIRE(op.data.size() <= max_write);
+      }
+    }
+  }
+  std::size_t op_index = 0;
+  for (std::size_t offset = 0; offset < kLargeImage.size();) {
+    const auto len           = static_cast<std::uint8_t>((kLargeImage.size() - offset < chunk_limit) ? kLargeImage.size() - offset : chunk_limit);
+    const std::uint32_t addr = start + static_cast<std::uint32_t>(offset);
+    for (unsigned int stage = 0; stage < 3u; ++stage) {
+      REQUIRE(op_index + 1u < writes.size());
+      const auto& address = writes[op_index++].data;
+      REQUIRE(address.size() == 6u);
+      REQUIRE(address[0] == 0x43u);
+      REQUIRE(address[1] == 4u);
+      const std::uint32_t expected_addr = addr + ((stage == 2u) ? 0x01000000u : 0u);
+      REQUIRE(tmf8829_get_uint32(address.data() + 2) == expected_addr);
+      const auto& command = writes[op_index++].data;
+      if (stage == 0u) {
+        REQUIRE(command.size() == 2u + len);
+        REQUIRE(command[0] == 0x42u);
+        REQUIRE(command[1] == len);
+        REQUIRE(std::memcmp(command.data() + 2, kLargeImage.data() + offset, len) == 0);
+      } else {
+        REQUIRE(command.size() == 3u);
+        REQUIRE(command[0] == 0x40u);
+        REQUIRE(command[1] == 1u);
+        REQUIRE(command[2] == len);
+      }
+    }
+    offset += len;
+  }
+  REQUIRE(op_index + 1u == writes.size());
+  REQUIRE(writes.back().data[0] == TMF8829_BL_CMD_STAT_START_RAM_APP);
+  REQUIRE(f.bus.fifo_read_queue[TMF8829_REG_CMD_STAT].empty());
+}
+
+TEST_CASE("download_firmware WR_RAM: mismatch identifies the CPU and prevents startup", "[tmf8829][download]") {
+  Fixture f;
+  REQUIRE(f.init() == TMF8829_OK);
+  setup_bootloader_ready(f);
+  f.drv.fw_image_read       = fake_fw_read;
+  const int cpu             = GENERATE(0, 1);
+  const auto corrupt_offset = GENERATE(0u, kFakeImageSize - 1u);
+  queue_write_status(f);
+  for (int i = 0; i <= cpu; ++i) {
+    auto response = ram_response(kFakeImage, kFakeImageSize);
+    if (i == cpu) {
+      response[TMF8829_BL_WR_HEADER + corrupt_offset] ^= 0x01u;
+    }
+    queue_readback(f, response);
+  }
+  const int expected_error = (cpu == 0) ? TMF8829_E_FW_VERIFY_CPU0 : TMF8829_E_FW_VERIFY_CPU1;
+  REQUIRE(tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0) == expected_error);
+  require_no_app_start(f);
+}
+
+TEST_CASE("download_firmware WR_RAM: invalid response header is a bootloader error", "[tmf8829][download]") {
+  Fixture f;
+  REQUIRE(f.init() == TMF8829_OK);
+  setup_bootloader_ready(f);
+  f.drv.fw_image_read = fake_fw_read;
+  const int cpu       = GENERATE(0, 1);
+  const int field     = GENERATE(0, 1);
+  queue_write_status(f);
+  for (int i = 0; i <= cpu; ++i) {
+    auto response = ram_response(kFakeImage, kFakeImageSize);
+    if (i == cpu) {
+      response[static_cast<std::size_t>(field)] = 0xFFu;
+    }
+    queue_readback(f, response);
+  }
+  REQUIRE(tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0) == TMF8829_E_BOOTLOADER);
+  require_no_app_start(f);
+}
+
+TEST_CASE("download_firmware WR_RAM: transport failures stop before startup", "[tmf8829][download]") {
+  Fixture f;
+  REQUIRE(f.init() == TMF8829_OK);
+  setup_bootloader_ready(f);
+  f.drv.fw_image_read = fake_fw_read;
+  queue_ram_download(f, kFakeImage, kFakeImageSize);
+  SECTION("each command write") {
+    f.bus.write_error_after_n = GENERATE(0, 1, 2, 3, 4, 5);
+  }
+  SECTION("each status or payload read") {
+    f.bus.read_error_after_n = GENERATE(0, 1, 2, 3, 4, 5, 6, 7);
+  }
+  REQUIRE(tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0) == TMF8829_E_BUS);
+  require_no_app_start(f);
+}
+
+TEST_CASE("download_firmware WR_RAM: readback waits for ready or times out", "[tmf8829][download]") {
+  Fixture f;
+  REQUIRE(f.init() == TMF8829_OK);
+  setup_bootloader_ready(f);
+  f.drv.fw_image_read = fake_fw_read;
+  const int cpu       = GENERATE(0, 1);
+  const bool timeout  = GENERATE(false, true);
+  queue_write_status(f);
+  if (cpu == 1) {
+    queue_readback(f, ram_response(kFakeImage, kFakeImageSize));
+  }
+  f.bus.fifo_push(TMF8829_REG_CMD_STAT, { TMF8829_BL_STAT_READY });
+  const auto polls = timeout ? TMF8829_BL_R_RAM_TIMEOUT_MS + 1u : 1u;
+  for (unsigned int i = 0; i < polls; ++i) {
+    f.bus.fifo_push(TMF8829_REG_CMD_STAT, { 0x01u });
+  }
+  if (!timeout) {
+    f.bus.fifo_push(TMF8829_REG_CMD_STAT, { TMF8829_BL_STAT_READY });
+    const auto response = ram_response(kFakeImage, kFakeImageSize);
+    f.bus.fifo_push(TMF8829_REG_CMD_STAT, response.data(), response.size());
+    if (cpu == 0) {
+      queue_readback(f, response);
+    }
+    f.bus.preload(TMF8829_REG_APP_ID, TMF8829_APP_ID__APPLICATION);
+  }
+  REQUIRE(tmf8829_download_firmware(&f.drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, 0) == (timeout ? TMF8829_E_TIMEOUT : TMF8829_OK));
+  REQUIRE(f.clock.now_us == (timeout ? TMF8829_BL_R_RAM_TIMEOUT_MS * 1000u : 1000u));
+  if (timeout) {
+    require_no_app_start(f);
+  }
+}
+
+TEST_CASE("download_firmware WR_RAM: rejects impossible address or write limits before transfers", "[tmf8829][download]") {
+  Fixture f;
+  REQUIRE(f.init() == TMF8829_OK);
+  f.drv.fw_image_read = fake_fw_read;
+  std::uint32_t start = TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT;
+  SECTION("address overflows when selecting CPU1") {
+    start = UINT32_MAX;
+  }
+  SECTION("last chunk would overflow CPU1 address") {
+    start = UINT32_MAX - TMF8829_BL_OTHER_CPU_RAM_OFFSET - kFakeImageSize + 2u;
+  }
+  SECTION("bus cannot send an address command") {
+    f.drv.max_write_len = 5u;
+  }
+  SECTION("buffer cannot hold a complete readback") {
+    f.drv.buffer_len = TMF8829_BL_WR_HEADER + kFakeImageSize - 1u;
+  }
+  REQUIRE(tmf8829_download_firmware(&f.drv, start, 0) == TMF8829_E_PARAM);
+  REQUIRE(f.bus.ops.empty());
 }
 
 TEST_CASE("download_firmware: bl_start_ram_app timeout", "[tmf8829][download]") {

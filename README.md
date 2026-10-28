@@ -96,6 +96,9 @@ target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829 tmf8829::default_im
 
 Then assign `drv.fw_image_read = tmf8829_fw_source_read` before `tmf8829_init`, and call `tmf8829_download_firmware(&drv, TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT, use_fifo)` from bootloader context.
 
+With `use_fifo = 0`, every chunk is read back from both CPU RAMs and compared against the source bytes before the application starts.
+Mismatches return `TMF8829_E_FW_VERIFY_CPU0` or `TMF8829_E_FW_VERIFY_CPU1`.
+
 ### Standalone (for development / running tests)
 
 ```sh

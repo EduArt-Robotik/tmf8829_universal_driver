@@ -66,6 +66,8 @@ typedef enum tmf8829_err {
   TMF8829_E_NO_RESULT       = -4,  /**< No frame / wrong frame type / bad EOF. */
   TMF8829_E_BOOTLOADER      = -5,  /**< Bootloader rejected command or bad image. */
   TMF8829_E_STATE           = -6,  /**< Operation invalid for current mode. */
+  TMF8829_E_FW_VERIFY_CPU0  = -7,  /**< Firmware readback differs in CPU0 RAM. */
+  TMF8829_E_FW_VERIFY_CPU1  = -8,  /**< Firmware readback differs in CPU1 RAM. */
   TMF8829_E_NOT_IMPLEMENTED = -99, /**< Reserved for stubbed entry points. */
 } tmf8829_err_t;
 

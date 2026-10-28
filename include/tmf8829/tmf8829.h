@@ -378,6 +378,12 @@ int tmf8829_bootloader_i2c_off(tmf8829_driver_t* drv);
  * @param[in] image_start_addr  Load address; use @ref TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT for vendor image.
  * @param[in] use_fifo          Non-zero for FIFO download path; @c 0 for direct WR_RAM.
  *
+ * Direct WR_RAM downloads read back each chunk from both CPU RAMs before starting
+ * the application. A data mismatch returns @ref TMF8829_E_FW_VERIFY_CPU0 or
+ * @ref TMF8829_E_FW_VERIFY_CPU1; malformed readback returns @ref TMF8829_E_BOOTLOADER.
+ * Bus failures and timeouts are propagated. FIFO downloads do not verify RAM.
+ * Verification uses an additional @ref TMF8829_BL_MAX_PAYLOAD bytes of stack storage.
+ *
  * @return @ref TMF8829_OK on success, negative @ref tmf8829_err_t or callback error code.
  */
 int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, int use_fifo);

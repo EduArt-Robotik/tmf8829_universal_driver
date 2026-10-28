@@ -389,6 +389,7 @@ _Static_assert(TMF8829_TICKS_PER_1000_US != 0u, "TMF8829_TICKS_PER_1000_US must 
 
 #define TMF8829_BL_CMD_STAT_SPI_OFF       0x20u
 #define TMF8829_BL_CMD_STAT_I2C_OFF       0x22u
+#define TMF8829_BL_CMD_STAT_R_RAM         0x40u
 #define TMF8829_BL_CMD_STAT_ADDR_RAM      0x43u
 #define TMF8829_BL_CMD_STAT_W_RAM_BOTH    0x42u
 #define TMF8829_BL_CMD_STAT_FIFO_BOTH     0x45u
@@ -400,6 +401,9 @@ _Static_assert(TMF8829_TICKS_PER_1000_US != 0u, "TMF8829_TICKS_PER_1000_US must 
 #define TMF8829_BL_WR_HEADER 2u
 /** Max payload bytes per @c W_RAM_BOTH command (ams reference). */
 #define TMF8829_BL_MAX_PAYLOAD 128u
+
+/** Address offset selecting the other CPU's RAM for bootloader readback. */
+#define TMF8829_BL_OTHER_CPU_RAM_OFFSET 0x01000000u
 
 /** Default RAM start address for downloadable application image. */
 #define TMF8829_FW_IMAGE_LOAD_ADDR_DEFAULT 0x00010000u
@@ -418,6 +422,9 @@ _Static_assert(TMF8829_TICKS_PER_1000_US != 0u, "TMF8829_TICKS_PER_1000_US must 
 #endif
 #ifndef TMF8829_BL_W_RAM_TIMEOUT_MS
 #define TMF8829_BL_W_RAM_TIMEOUT_MS 3u
+#endif
+#ifndef TMF8829_BL_R_RAM_TIMEOUT_MS
+#define TMF8829_BL_R_RAM_TIMEOUT_MS 3u
 #endif
 #ifndef TMF8829_BL_W_FIFO_TIMEOUT_MS
 #define TMF8829_BL_W_FIFO_TIMEOUT_MS 3u

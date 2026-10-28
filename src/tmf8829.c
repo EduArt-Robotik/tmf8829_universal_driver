@@ -563,7 +563,7 @@ static int bl_set_ram_addr(tmf8829_driver_t* drv, uint32_t addr) {
   if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 6u) != TMF8829_OK) {
     return TMF8829_E_BUS;
   }
-  return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 3u, TMF8829_BL_SET_ADDR_TIMEOUT_MS);
+  return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u, TMF8829_BL_SET_ADDR_TIMEOUT_MS);
 }
 
 static int bl_write_ram_both(tmf8829_driver_t* drv, uint8_t payload_len, const uint8_t* payload) {
@@ -578,6 +578,33 @@ static int bl_write_ram_both(tmf8829_driver_t* drv, uint8_t payload_len, const u
     return TMF8829_E_BUS;
   }
   return reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u, TMF8829_BL_W_RAM_TIMEOUT_MS);
+}
+
+static int bl_verify_ram(tmf8829_driver_t* drv, uint32_t addr, const uint8_t* expected, uint8_t len, int mismatch_error) {
+  int rc = bl_set_ram_addr(drv, addr);
+  if (rc != TMF8829_OK) {
+    return rc;
+  }
+  drv->buffer[0] = TMF8829_BL_CMD_STAT_R_RAM;
+  drv->buffer[1] = 1u;
+  drv->buffer[2] = len;
+  if (bus_write(drv, TMF8829_REG_CMD_STAT, drv->buffer, 3u) != TMF8829_OK) {
+    return TMF8829_E_BUS;
+  }
+  rc = reg_poll_first(drv, TMF8829_REG_CMD_STAT, TMF8829_BL_STAT_READY, 1u, TMF8829_BL_R_RAM_TIMEOUT_MS);
+  if (rc != TMF8829_OK) {
+    return rc;
+  }
+  if (bus_read(drv, TMF8829_REG_CMD_STAT, drv->buffer, (uint16_t)(TMF8829_BL_WR_HEADER + len)) != TMF8829_OK) {
+    return TMF8829_E_BUS;
+  }
+  if (drv->buffer[0] != TMF8829_BL_STAT_READY || drv->buffer[1] != len) {
+    return TMF8829_E_BOOTLOADER;
+  }
+  if (memcmp(expected, &drv->buffer[TMF8829_BL_WR_HEADER], len) != 0) {
+    return mismatch_error;
+  }
+  return TMF8829_OK;
 }
 
 static int bl_write_fifo_both(tmf8829_driver_t* drv, uint32_t addr, uint32_t len) {
@@ -669,9 +696,9 @@ int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, 
       idx += chunk_len;
     }
   } else {
-    rc = bl_set_ram_addr(drv, image_start_addr);
-    if (rc != TMF8829_OK) {
-      return rc;
+    uint8_t expected[TMF8829_BL_MAX_PAYLOAD];
+    if (drv_max_write_len(drv) < 6u || image_start_addr > UINT32_MAX - TMF8829_BL_OTHER_CPU_RAM_OFFSET || image_size - 1u > UINT32_MAX - TMF8829_BL_OTHER_CPU_RAM_OFFSET - image_start_addr) {
+      return TMF8829_E_PARAM;
     }
     idx = 0u;
     while (idx < image_size) {
@@ -691,14 +718,27 @@ int tmf8829_download_firmware(tmf8829_driver_t* drv, uint32_t image_start_addr, 
       if (TMF8829_BL_WR_HEADER + chunk_len > drv->buffer_len) {
         return TMF8829_E_PARAM;
       }
-      n = drv->fw_image_read(drv, idx, &drv->buffer[TMF8829_BL_WR_HEADER], chunk_len, NULL);
+      n = drv->fw_image_read(drv, idx, expected, chunk_len, NULL);
       if (n < 0) {
         return n;
       }
       if ((uint32_t)n != (uint32_t)chunk_len) {
         return TMF8829_E_BOOTLOADER;
       }
-      rc = bl_write_ram_both(drv, (uint8_t)chunk_len, &drv->buffer[TMF8829_BL_WR_HEADER]);
+      /* Readback selects CPU1 RAM, so restore the write address for every chunk. */
+      rc = bl_set_ram_addr(drv, image_start_addr + idx);
+      if (rc != TMF8829_OK) {
+        return rc;
+      }
+      rc = bl_write_ram_both(drv, (uint8_t)chunk_len, expected);
+      if (rc != TMF8829_OK) {
+        return rc;
+      }
+      rc = bl_verify_ram(drv, image_start_addr + idx, expected, (uint8_t)chunk_len, TMF8829_E_FW_VERIFY_CPU0);
+      if (rc != TMF8829_OK) {
+        return rc;
+      }
+      rc = bl_verify_ram(drv, image_start_addr + idx + TMF8829_BL_OTHER_CPU_RAM_OFFSET, expected, (uint8_t)chunk_len, TMF8829_E_FW_VERIFY_CPU1);
       if (rc != TMF8829_OK) {
         return rc;
       }
