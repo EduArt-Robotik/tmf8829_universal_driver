@@ -60,6 +60,22 @@
       "cleanFirst": true
     }
   ],
+  "testPresets": [
+    {
+      "name": "Debug",
+      "configurePreset": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "Release",
+      "configurePreset": "Release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ],
   "workflowPresets": [
     {
       "name": "Debug",
@@ -70,6 +86,10 @@
         },
         {
           "type": "build",
+          "name": "Debug"
+        },
+        {
+          "type": "test",
           "name": "Debug"
         }
       ]
@@ -83,6 +103,10 @@
         },
         {
           "type": "build",
+          "name": "Release"
+        },
+        {
+          "type": "test",
           "name": "Release"
         }
       ]
@@ -110,6 +134,10 @@
         {
           "type": "build",
           "name": "DebugClean"
+        },
+        {
+          "type": "test",
+          "name": "Debug"
         }
       ]
     },
@@ -123,6 +151,10 @@
         {
           "type": "build",
           "name": "ReleaseClean"
+        },
+        {
+          "type": "test",
+          "name": "Release"
         }
       ]
     }
