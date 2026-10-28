@@ -254,20 +254,21 @@ extern "C" {
  */
 /* ------------------------------------------------------------------ */
 
-#define TMF8829_CMD_MEASURE                 0x10u
-#define TMF8829_CMD_CLEAR_STATUS            0x11u
-#define TMF8829_CMD_WRITE_PAGE              0x15u
-#define TMF8829_CMD_LOAD_CONFIG_PAGE        0x16u
-#define TMF8829_CMD_LOAD_CFG_8X8            0x40u
-#define TMF8829_CMD_LOAD_CFG_8X8_LONG_RANGE 0x41u
-#define TMF8829_CMD_LOAD_CFG_8X8_HIGH_ACC   0x42u
-#define TMF8829_CMD_LOAD_CFG_16X16          0x43u
-#define TMF8829_CMD_LOAD_CFG_16X16_HIGH_ACC 0x44u
-#define TMF8829_CMD_LOAD_CFG_32X32          0x45u
-#define TMF8829_CMD_LOAD_CFG_32X32_HIGH_ACC 0x46u
-#define TMF8829_CMD_LOAD_CFG_48X32          0x47u
-#define TMF8829_CMD_LOAD_CFG_48X32_HIGH_ACC 0x48u
-#define TMF8829_CMD_STOP                    0xFFu
+#define TMF8829_CMD_MEASURE                     0x10u
+#define TMF8829_CMD_CLEAR_STATUS                0x11u
+#define TMF8829_CMD_WRITE_PAGE                  0x15u
+#define TMF8829_CMD_LOAD_CONFIG_PAGE            0x16u
+#define TMF8829_CMD_LOAD_CFG_8X8                0x40u
+#define TMF8829_CMD_LOAD_CFG_8X8_LONG_RANGE     0x41u
+#define TMF8829_CMD_LOAD_CFG_8X8_HIGH_ACC       0x42u
+#define TMF8829_CMD_LOAD_CFG_16X16              0x43u
+#define TMF8829_CMD_LOAD_CFG_16X16_HIGH_ACC     0x44u
+#define TMF8829_CMD_LOAD_CFG_32X32              0x45u
+#define TMF8829_CMD_LOAD_CFG_32X32_HIGH_ACC     0x46u
+#define TMF8829_CMD_LOAD_CFG_48X32              0x47u
+#define TMF8829_CMD_LOAD_CFG_48X32_HIGH_ACC     0x48u
+#define TMF8829_CMD_LOAD_CFG_8X8_EXTENDED_RANGE 0x49u
+#define TMF8829_CMD_STOP                        0xFFu
 
 /* Application status (response in TMF8829_REG_CMD_STAT) */
 #define TMF8829_STAT_OK       0x00u

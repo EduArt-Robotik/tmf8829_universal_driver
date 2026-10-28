@@ -86,6 +86,8 @@ target_link_libraries(your_firmware PRIVATE tmf8829::tmf8829)
 
 ### Bundled application image
 
+The bundled firmware is ams-OSRAM **1.2.200**.
+
 ```cmake
 set(TMF8829_INCLUDE_DEFAULT_IMAGE ON CACHE BOOL "" FORCE)
 add_subdirectory(external/tmf8829_universal_driver)

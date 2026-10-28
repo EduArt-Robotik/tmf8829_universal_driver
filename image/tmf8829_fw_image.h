@@ -22,8 +22,8 @@
 extern "C" {
 #endif
 
-/** Byte length of @ref tmf8829_fw_image (0x36D0 for the current bundled file). */
-#define TMF8829_FW_IMAGE_NUM_BYTES 0x36D0u
+/** Byte length of @ref tmf8829_fw_image (firmware 1.2.200). */
+#define TMF8829_FW_IMAGE_NUM_BYTES 0x386Cu
 
 /** ROM copy of the downloadable measurement-application image. */
 extern const uint8_t tmf8829_fw_image[TMF8829_FW_IMAGE_NUM_BYTES];
